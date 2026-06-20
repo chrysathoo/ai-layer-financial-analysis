@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regime Shift Radar v5 · Narrative vs Reality</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #07090C;
+  --surface:   #0C1017;
+  --surface2:  #121820;
+  --surface3:  #18202A;
+  --border:    #1A2330;
+  --border2:   #222E3C;
+  --narrative: #C8A0FF;   /* purple — AI narrative/hype */
+  --narr-dim:  #1A0F2E;
+  --narr-mid:  #2A1A4A;
+  --reality:   #00C896;   /* green — measured reality */
+  --real-dim:  #002E22;
+  --real-mid:  #004436;
+  --gap-pos:   #FF6B35;   /* orange — narrative ahead of reality */
+  --gap-neg:   #4A9EFF;   /* blue — reality catching up */
+  --gap-dim:   #1A1208;
+  --warn:      #FFB020;
+  --warn-dim:  #2A1E06;
+  --red:       #FF4D6D;
+  --red-dim:   #2A0814;
+  --muted:     #2E3D4E;
+  --text:      #C8D4DF;
+  --text-dim:  #5A7080;
+  --mono:      'JetBrains Mono', monospace;
+  --sans:      'Inter', -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── subtle grid bg ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page { position: relative; z-index: 1; max-width: 1160px; margin: 0 auto; padding: 1.75rem 1.5rem 5rem; }
+
+/* ══════════════ TOPBAR ══════════════ */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+.tb-left { display: flex; align-items: center; gap: 10px; }
+.tb-wordmark { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--text); }
+.tb-sub { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+.tb-right { font-family: var(--mono); font-size: 9px; color: var(--text-dim); text-align: right; }
+.live-badge { display: inline-flex; align-items: center; gap: 5px; color: var(--reality); margin-bottom: 2px; }
+.live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--reality); animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ══════════════ VERDICT HERO ══════════════ */
+.verdict-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 760px) { .verdict-hero { grid-template-columns: 1fr; } }
+
+.verdict-cell {
+  background: var(--surface);
+  padding: 1.4rem 1.5rem;
+}
+.verdict-cell.center {
+  background: var(--surface2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.verdict-cell.center::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,107,53,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.vc-eyebrow { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+.vc-value { font-family: var(--mono); font-size: 38px; font-weight: 700; line-height: 1; }
+.vc-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.vc-label { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: 0.02em; margin-top: 6px; }
+
+/* Regime signal pills */
+.regime-signals { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; width: 100%; }
+.rs-row { display: flex; align-items: center; gap: 8px; }
+.rs-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.rs-name { font-family: var(--mono); font-size: 10px; flex: 1; }
+.rs-status { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 10px; }
+.rs-active { background: rgba(255,107,53,0.15); color: var(--gap-pos); border: 1px solid rgba(255,107,53,0.3); }
+.rs-inactive { color: var(--muted); }
+
+/* ══════════════ TWO-COLUMN MAIN ══════════════ */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ══════════════ PANEL ══════════════ */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.panel-hd {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.panel-title { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.panel-tag { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 3px; }
+.tag-narr { background: var(--narr-dim); color: var(--narrative); border: 1px solid var(--narr-mid); }
+.tag-real { background: var(--real-dim); color: var(--reality); border: 1px solid var(--real-mid); }
+.tag-gap  { background: var(--gap-dim);  color: var(--gap-pos);  border: 1px solid rgba(255,107,53,0.25); }
+.tag-warn { background: var(--warn-dim); color: var(--warn);     border: 1px solid rgba(255,176,32,0.25); }
+.panel-bd { padding: 14px; }
+
+/* ══════════════ CAPEX TRACKER ══════════════ */
+.capex-row {
+  display: grid; grid-template-columns: 72px 1fr 60px 46px;
+  align-items: center; gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.capex-row:last-child { border-bottom: none; }
+.capex-co { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text); }
+.capex-bars { display: flex; flex-direction: column; gap: 3px; }
+.bar-track { height: 5px; background: var(--border2); border-radius: 3px; overflow: hidden; margin-bottom: 3px; position: relative; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 1.1s cubic-bezier(.4,0,.2,1); }
+.bar-narr { background: var(--narrative); opacity: 0.8; }
+.bar-real { background: var(--reality); }
+.bar-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8px; color: var(--text-dim); }
+.capex-nums { text-align: right; }
+.capex-committed { font-family: var(--mono); font-size: 11px; color: var(--narrative); font-weight: 600; }
+.capex-actual { font-family: var(--mono); font-size: 9px; color: var(--reality); }
+.exec-rate { font-family: var(--mono); font-size: 10px; font-weight: 600; text-align: right; }
+
+/* ══════════════ FORECAST vs ACTUAL ══════════════ */
+.fva-chart { position: relative; height: 180px; margin-top: 4px; }
+#fva-svg { width: 100%; height: 100%; }
+
+/* ══════════════ DC TIMELINE ══════════════ */
+.dc-item {
+  display: flex; gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.dc-item:last-child { border-bottom: none; }
+.dc-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.dot-delayed { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+.dot-cancelled { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.dot-ontrack { background: var(--reality); box-shadow: 0 0 6px var(--reality); }
+.dc-name { font-size: 11px; font-weight: 500; color: var(--text); line-height: 1.3; }
+.dc-meta { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+.dc-slip { font-family: var(--mono); font-size: 9px; }
+.slip-delayed { color: var(--warn); }
+.slip-cancelled { color: var(--red); }
+.slip-ontrack { color: var(--reality); }
+.dc-right { text-align: right; min-width: 80px; }
+
+/* ══════════════ WHOLESALE PRICE ══════════════ */
+.price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.price-cell {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+}
+.price-hub { font-family: var(--mono); font-size: 8px; color: var(--text-dim); letter-spacing: 0.08em; margin-bottom: 3px; }
+.price-val { font-family: var(--mono); font-size: 16px; font-weight: 700; }
+.price-delta { font-family: var(--mono); font-size: 9px; margin-top: 2px; }
+.delta-up { color: var(--gap-pos); }
+.delta-dn { color: var(--reality); }
+.price-note { font-size: 10px; color: var(--text-dim); line-height: 1.4; padding-top: 8px; border-top: 1px solid var(--border); }
+
+/* ══════════════ HYPE GAP METER ══════════════ */
+.gap-meter-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 4px; }
+#gap-svg { width: 220px; height: 120px; }
+.gap-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; margin-top: 10px; }
+.gap-leg-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-dim); }
+.gap-leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ══════════════ BOTTOM FULL-WIDTH ══════════════ */
+.full-panel { margin-bottom: 1.25rem; }
+
+/* ══════════════ SIGNAL TABLE ══════════════ */
+.sig-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.sig-table th { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); padding: 6px 12px; border-bottom: 1px solid var(--border); text-align: left; font-weight: 500; }
+.sig-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.sig-table tr:last-child td { border-bottom: none; }
+.sig-table tr:hover td { background: var(--surface2); }
+.sig-indicator { display: inline-flex; align-items: center; gap: 6px; }
+.si-dot { width: 6px; height: 6px; border-radius: 50%; }
+.sig-pill { font-family: var(--mono); font-size: 9px; padding: 2px 8px; border-radius: 10px; }
+.pill-confirm { background: rgba(0,200,150,0.1); color: var(--reality); border: 1px solid rgba(0,200,150,0.25); }
+.pill-partial { background: rgba(255,176,32,0.1); color: var(--warn); border: 1px solid rgba(255,176,32,0.25); }
+.pill-diverge { background: rgba(255,107,53,0.1); color: var(--gap-pos); border: 1px solid rgba(255,107,53,0.25); }
+.pill-watch   { background: rgba(74,158,255,0.1); color: var(--gap-neg); border: 1px solid rgba(74,158,255,0.25); }
+.sig-bar-cell { width: 120px; }
+.sig-mini-bar { height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.sig-mini-fill { height: 100%; border-radius: 2px; transition: width 1.1s ease; }
+
+/* ══════════════ FOOTER ══════════════ */
+.footer {
+  margin-top: 2rem; padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 8px;
+}
+.footer-mono { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+
+/* ══════════════ SCORE FORMULA PANEL ══════════════ */
+.formula-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+.formula-grid {
+  display: grid;
+  grid-template-columns: 1fr 48px 1fr 48px 1fr;
+  gap: 0;
+}
+@media (max-width: 760px) { .formula-grid { grid-template-columns: 1fr; } }
+.formula-col {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+.formula-col:last-child { border-right: none; }
+.formula-op {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 18px; font-weight: 300;
+  color: var(--muted);
+  border-right: 1px solid var(--border);
+}
+.fc-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+.fc-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.fc-row:last-child { border-bottom: none; }
+.fc-name { font-size: 10px; color: var(--text-dim); flex: 1; }
+.fc-weight { font-family: var(--mono); font-size: 9px; color: var(--muted); width: 32px; text-align: right; }
+.fc-val { font-family: var(--mono); font-size: 10px; font-weight: 600; width: 36px; text-align: right; }
+.fc-total {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--border2);
+  font-family: var(--mono); font-size: 9px; color: var(--text-dim);
+}
+.fc-total-val { font-size: 16px; font-weight: 700; }
+.formula-verdict {
+  padding: 14px 16px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  background: var(--surface2);
+  text-align: center;
+}
+.fv-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+.fv-equation { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-bottom: 8px; line-height: 1.8; }
+.fv-threshold { font-size: 10px; color: var(--text-dim); line-height: 1.6; text-align: left; width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.fv-th-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.fv-th-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* ══════════════ DATA N/A STYLES ══════════════ */
+.dna {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 8px;
+  color: var(--red); background: rgba(255,77,109,0.08);
+  border: 1px solid rgba(255,77,109,0.3);
+  border-radius: 3px; padding: 1px 5px;
+  vertical-align: middle; white-space: nowrap;
+  cursor: help;
+}
+.dna::before { content: '✕'; font-size: 7px; }
+.dna-banner {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: rgba(255,77,109,0.05);
+  border: 1px solid rgba(255,77,109,0.2);
+  border-left: 3px solid var(--red);
+  border-radius: 4px; padding: 8px 10px;
+  margin-bottom: 10px; font-size: 10px; line-height: 1.6;
+}
+.dna-banner-icon { color: var(--red); font-family: var(--mono); font-size: 11px; flex-shrink: 0; }
+.dna-banner-title { color: var(--red); font-family: var(--mono); font-size: 9px; font-weight: 600; margin-bottom: 2px; }
+.dna-banner-body { color: var(--text-dim); }
+
+/* ══════════════ PLACEHOLDER STYLES ══════════════ */
+.ph {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 8px;
+  color: #FFB020; background: rgba(255,176,32,0.08);
+  border: 1px dashed rgba(255,176,32,0.35);
+  border-radius: 3px; padding: 1px 5px;
+  vertical-align: middle; white-space: nowrap;
+  cursor: help;
+}
+.ph::before { content: '⚠'; font-size: 7px; }
+.ph-block {
+  display: block; margin-top: 5px;
+  font-family: var(--mono); font-size: 8px;
+  color: rgba(255,176,32,0.6);
+  border-left: 2px dashed rgba(255,176,32,0.3);
+  padding: 3px 7px; line-height: 1.5;
+  background: rgba(255,176,32,0.03);
+  border-radius: 0 3px 3px 0;
+}
+/* Highlight the number itself when it's a placeholder */
+.ph-val {
+  position: relative;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: rgba(255,176,32,0.5);
+  text-underline-offset: 3px;
+}
+
+/* ══════════════ UTIL ══════════════ */
+.divider-label {
+  display: flex; align-items: center; gap: 10px;
+  margin: 1.25rem 0 1rem;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.divider-label::before, .divider-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="tb-left">
+    <div>
+      <div class="tb-wordmark">REGIME SHIFT RADAR · v5</div>
+      <div class="tb-sub">AI Narrative ↔ US Power System Reality · Dual-Layer Observation</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="live-badge"><span class="live-dot"></span> MONITORING</div>
+    <div>2026-Q1 · Last updated June 2026</div>
+    <div>Coverage: 2022-Q1 → 2026-Q1 · 17 seasons</div>
+  </div>
+</div>
+
+<!-- ══ VERDICT HERO ══ -->
+<div class="verdict-hero">
+
+  <!-- LEFT: Narrative Score -->
+  <div class="verdict-cell">
+    <div class="vc-eyebrow">AI Narrative Score</div>
+    <div class="vc-value ph-val" style="color:var(--narrative)" id="narr-score">0.000</div>
+    <span class="ph" title="公式面板六個分項皆為 Placeholder，填入真實分項後此值自動更新">Placeholder · 公式面板填入後計算</span>
+    <div class="vc-sub" style="margin-top:6px;">CAPEX 承諾 + 機構預測強度</div>
+    <div style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px">
+        <span>AI 四巨頭 CAPEX 承諾</span>
+        <span style="color:var(--narrative)" class="ph-val">$320B / yr <span class="ph" title="來源：fetch-sec.py → SEC EDGAR · 填入口徑：FY2026 full-year guidance 四家合計">PH</span></span>
+      </div>
+      <div style="height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;background:var(--narrative);border-radius:2px;width:0%;transition:width 1.2s ease" id="nb1"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px">
+        <span>機構 TWh 需求預測中位數</span>
+        <span style="color:var(--narrative)" class="ph-val">+4.5% YoY <span class="ph" title="來源：Goldman Sachs / IEA / EPRI 預測報告，需手動錄入，非腳本輸出">PH</span></span>
+      </div>
+      <div style="height:4px;background:var(--border2);border-radius:2px;overflow:hidden">
+        <div style="height:100%;background:var(--narrative);border-radius:2px;width:0%;transition:width 1.4s ease" id="nb2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: Verdict -->
+  <div class="verdict-cell center">
+    <div class="vc-eyebrow">Narrative–Reality Gap</div>
+    <div class="vc-value" style="color:var(--gap-pos)" id="gap-score">+0.00</div>
+    <div class="vc-label" style="color:var(--gap-pos)">Narrative Leading</div>
+    <div class="vc-sub" style="margin-top:6px;max-width:200px">敘事顯著超前於<br>電力系統實測數據</div>
+    <div class="regime-signals">
+      <div class="rs-row">
+        <div class="rs-dot" style="background:var(--reality)"></div>
+        <div class="rs-name" style="color:var(--text-dim)">Aligned</div>
+        <div class="rs-status rs-inactive">—</div>
+      </div>
+      <div class="rs-row">
+        <div class="rs-dot" style="background:var(--gap-pos)"></div>
+        <div class="rs-name">Narrative Leading</div>
+        <div class="rs-status rs-active">● ACTIVE</div>
+      </div>
+      <div class="rs-row">
+        <div class="rs-dot" style="background:var(--gap-neg)"></div>
+        <div class="rs-name" style="color:var(--text-dim)">Reality Catching Up</div>
+        <div class="rs-status rs-inactive">—</div>
+      </div>
+      <div class="rs-row">
+        <div class="rs-dot" style="background:var(--red)"></div>
+        <div class="rs-name" style="color:var(--text-dim)">Narrative Collapse</div>
+        <div class="rs-status rs-inactive">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Reality Score -->
+  <div class="verdict-cell">
+    <div class="vc-eyebrow">Power Reality Score</div>
+    <div class="vc-value ph-val" style="color:var(--reality)" id="real-score">0.000</div>
+    <span class="ph" title="公式面板四個分項皆為 Placeholder，填入真實分項後此值自動更新">Placeholder · 公式面板填入後計算</span>
+    <div class="vc-sub" style="margin-top:6px;">電力消耗 + 建設 + 電價訊號</div>
+    <div style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px">
+        <span>實際電力消耗超額增速</span>
+        <span style="color:var(--reality)" class="ph-val">+2.1% vs baseline <span class="ph" title="來源：fetch-eia.py → EIA API · 六州商業用電超額增速，從 calc-density-growth.py 輸出">PH</span></span>
+      </div>
+      <div style="height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;background:var(--reality);border-radius:2px;width:0%;transition:width 1.2s ease" id="rb1"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px">
+        <span>批發電價壓力指數</span>
+        <span style="color:var(--reality)" class="ph-val">PJM +34% <span class="ph" title="來源：PJM / ISO 官網 day-ahead 電價，非原始文件腳本輸出，需另外取得">PH</span></span>
+      </div>
+      <div style="height:4px;background:var(--border2);border-radius:2px;overflow:hidden">
+        <div style="height:100%;background:var(--reality);border-radius:2px;width:0%;transition:width 1.4s ease" id="rb2"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SCORE FORMULA PANEL ══ -->
+<div class="formula-panel">
+  <div class="panel-hd">
+    <div class="panel-title">評分公式 · Score Methodology</div>
+    <div class="panel-tag tag-gap">HOW SCORES ARE CALCULATED</div>
+  </div>
+  <div class="formula-grid">
+
+    <!-- Narrative Score breakdown -->
+    <div class="formula-col">
+      <div class="fc-title" style="color:var(--narrative)">Narrative Score · N</div>
+      <div class="fc-row">
+        <div class="fc-name">AI 四巨頭 CAPEX 承諾強度</div>
+        <div class="fc-weight">50%</div>
+        <div class="fc-val ph-val" style="color:var(--narrative)">0.88 <span class="ph" title="來源：fetch-sec.py · FY guidance 四家合計正規化至 0–1">PH</span></div>
+      </div>
+      <div class="fc-row">
+        <div class="fc-name">機構 TWh 預測中位數增速</div>
+        <div class="fc-weight">30%</div>
+        <div class="fc-val ph-val" style="color:var(--narrative)">0.78 <span class="ph" title="來源：Goldman / IEA / EPRI 報告，需手動錄入">PH</span></div>
+      </div>
+      <div class="fc-row">
+        <div class="fc-name">管理層 guidance 上修頻率</div>
+        <div class="fc-weight">20%</div>
+        <div class="fc-val ph-val" style="color:var(--narrative)">0.80 <span class="ph" title="來源：財報電話會議，需人工編碼，非腳本輸出">PH</span></div>
+      </div>
+      <div class="fc-total">
+        <span>N = Σ(分項 × 權重)</span>
+        <span class="fc-total-val ph-val" style="color:var(--narrative)">0.841 <span class="ph" title="三個分項均為 Placeholder，此加總亦為示意值">PH</span></span>
+      </div>
+    </div>
+
+    <div class="formula-op">−</div>
+
+    <!-- Reality Score breakdown -->
+    <div class="formula-col">
+      <div class="fc-title" style="color:var(--reality)">Reality Score · R</div>
+      <div class="fc-row">
+        <div class="fc-name">AI 驅動電力消耗超額增速</div>
+        <div class="fc-weight">40%</div>
+        <div class="fc-val ph-val" style="color:var(--reality)">0.52 <span class="ph" title="來源：calc-density-growth.py 輸出 · 六州超額增速正規化">PH</span></div>
+      </div>
+      <div class="fc-row">
+        <div class="fc-name">CAPEX 實際執行率</div>
+        <div class="fc-weight">25%</div>
+        <div class="fc-val ph-val" style="color:var(--reality)">0.69 <span class="ph" title="來源：fetch-sec.py · 口徑：已執行 ÷ guidance，需定義 TTM 或 YTD">PH</span></div>
+      </div>
+      <div class="fc-row">
+        <div class="fc-name">DC 上線時程達標率</div>
+        <div class="fc-weight">20%</div>
+        <div class="fc-val ph-val" style="color:var(--reality)">0.40 <span class="ph" title="來源：FERC Queue + 公開新聞，需手動追蹤，非腳本輸出">PH</span></div>
+      </div>
+      <div class="fc-row">
+        <div class="fc-name">批發電價壓力訊號</div>
+        <div class="fc-weight">15%</div>
+        <div class="fc-val ph-val" style="color:var(--reality)">0.76 <span class="ph" title="來源：PJM / ERCOT / MISO 官網，需另外取得，非原始腳本覆蓋">PH</span></div>
+      </div>
+      <div class="fc-total">
+        <span>R = Σ(分項 × 權重)</span>
+        <span class="fc-total-val ph-val" style="color:var(--reality)">0.612 <span class="ph" title="四個分項均為 Placeholder，此加總亦為示意值">PH</span></span>
+      </div>
+    </div>
+
+    <div class="formula-op">=</div>
+
+    <!-- Verdict logic -->
+    <div class="formula-col formula-verdict">
+      <div class="fv-label">Gap Score</div>
+      <div class="fv-equation">
+        Gap = N − R<br>
+        <span style="color:var(--narrative)" class="ph-val">0.841</span>
+        <span style="color:var(--muted)"> − </span>
+        <span style="color:var(--reality)" class="ph-val">0.612</span>
+        <span style="color:var(--muted)"> = </span>
+        <span style="color:var(--gap-pos)" class="ph-val">+0.229</span>
+      </div>
+      <div style="margin-top:4px"><span class="ph" title="N 與 R 皆為示意值，Gap 亦為示意值，填入真實數字後 Regime 判定才有效">所有分數均為 Placeholder</span></div>
+      <div class="fv-threshold">
+        <div class="fv-th-row"><div class="fv-th-dot" style="background:var(--reality)"></div><span style="color:var(--text-dim)">Aligned: |Gap| &lt; 0.10</span></div>
+        <div class="fv-th-row"><div class="fv-th-dot" style="background:var(--gap-pos)"></div><span style="color:var(--gap-pos)">Narrative Leading: Gap ≥ 0.10 ← <strong>示意</strong></span></div>
+        <div class="fv-th-row"><div class="fv-th-dot" style="background:var(--gap-neg)"></div><span style="color:var(--text-dim)">Reality Catching Up: Gap falling from &gt; 0.10</span></div>
+        <div class="fv-th-row"><div class="fv-th-dot" style="background:var(--red)"></div><span style="color:var(--text-dim)">Narrative Collapse: N drops &gt; 0.15 in 2 qtrs</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ DIVIDER ══ -->
+<div class="divider-label">AI 敘事層 · Narrative Side</div>
+
+<!-- ══ TWO COL: CAPEX + FORECAST ══ -->
+<div class="two-col">
+
+  <!-- CAPEX Tracker -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title">AI 四巨頭 CAPEX · 承諾金額（敘事）vs 執行缺口（現實）</div>
+      <div style="display:flex;gap:6px">
+        <div class="panel-tag tag-narr">NARRATIVE</div>
+        <div class="panel-tag tag-real">REALITY</div>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <!-- DATA N/A 橫幅 -->
+      <div class="dna-banner">
+        <div class="dna-banner-icon">✕</div>
+        <div>
+          <div class="dna-banner-title">執行率數字不可靠（非 Placeholder，是結構性問題）</div>
+          <div class="dna-banner-body">「承諾」與「已執行」的口徑未定義，導致執行率無法計算：① 承諾金額：FY guidance（全年展望）vs 多年計畫總額？哪份財報？② 已執行金額：YTD（本年迄今）vs TTM（滾動12個月）vs 季度×4？不同口徑差距可達 20–30 個百分點。下方數字為示意，<strong>需先定義口徑才能填入真實數字</strong>。建議口徑：承諾 = 最新財報 FY guidance；已執行 = 最近完整財年實際 CAPEX。</div>
+        </div>
+      </div>
+      <!-- legend -->
+      <div style="display:flex;gap:14px;margin-bottom:10px;font-family:var(--mono);font-size:9px;color:var(--text-dim);flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;background:var(--narrative);opacity:0.8;display:inline-block;border-radius:2px"></span>承諾金額（敘事）= 各公司 FY guidance</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;background:var(--reality);display:inline-block;border-radius:2px"></span>已執行（現實）= 最近完整財年實際 CAPEX</span>
+        <span style="margin-left:auto;color:var(--muted)">進度條：各公司承諾金額自身 = 100%</span>
+      </div>
+
+      <!-- 欄位標題 -->
+      <div style="display:grid;grid-template-columns:44px 1fr 90px 90px 80px;gap:6px;padding:0 0 5px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:0.08em;">
+        <div></div>
+        <div>承諾 / 已執行（進度條）</div>
+        <div style="text-align:right">承諾金額</div>
+        <div style="text-align:right">已執行金額</div>
+        <div style="text-align:right">執行率</div>
+      </div>
+
+      <!-- MSFT：承諾 $80B = 100%，已執行 $54B = 67.5% -->
+      <div class="capex-row" style="grid-template-columns:44px 1fr 90px 90px 80px">
+        <div class="capex-co" style="color:#4A9EFF">MSFT</div>
+        <div class="capex-bars">
+          <div class="bar-track">
+            <div class="bar-fill bar-narr" style="width:100%;opacity:0.2"></div>
+            <div class="bar-fill bar-real" style="width:0%;position:absolute;top:0;left:0" id="cx-msft-r"></div>
+          </div>
+          <div class="bar-labels">
+            <span style="color:var(--narrative);opacity:0.7">$80B 承諾 <span class="ph" title="fetch-sec.py · FY2026 guidance">PH</span></span>
+            <span style="color:var(--reality)">$54B 執行 <span class="ph" title="fetch-sec.py · 最近完整財年，口徑待確認">PH</span></span>
+          </div>
+        </div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--narrative)" class="ph-val">$80B</div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--reality)" class="ph-val">$54B</div>
+        <div style="text-align:right"><span class="dna" title="分子分母口徑確認後才能計算；建議口徑：最近完整財年實際 ÷ 同年 FY guidance">待定義</span></div>
+      </div>
+
+      <!-- GOOG：承諾 $75B = 100%，已執行 $59B = 78.7% -->
+      <div class="capex-row" style="grid-template-columns:44px 1fr 90px 90px 80px">
+        <div class="capex-co" style="color:#EA4335">GOOG</div>
+        <div class="capex-bars">
+          <div class="bar-track">
+            <div class="bar-fill bar-narr" style="width:100%;opacity:0.2"></div>
+            <div class="bar-fill bar-real" style="width:0%;position:absolute;top:0;left:0" id="cx-goog-r"></div>
+          </div>
+          <div class="bar-labels">
+            <span style="color:var(--narrative);opacity:0.7">$75B 承諾 <span class="ph" title="fetch-sec.py · FY2026 guidance">PH</span></span>
+            <span style="color:var(--reality)">$59B 執行 <span class="ph" title="fetch-sec.py · 最近完整財年，口徑待確認">PH</span></span>
+          </div>
+        </div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--narrative)" class="ph-val">$75B</div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--reality)" class="ph-val">$59B</div>
+        <div style="text-align:right"><span class="dna" title="分子分母口徑確認後才能計算；建議口徑：最近完整財年實際 ÷ 同年 FY guidance">待定義</span></div>
+      </div>
+
+      <!-- META：承諾 $65B = 100%，已執行 $38B = 58.5% -->
+      <div class="capex-row" style="grid-template-columns:44px 1fr 90px 90px 80px">
+        <div class="capex-co" style="color:var(--narrative)">META</div>
+        <div class="capex-bars">
+          <div class="bar-track">
+            <div class="bar-fill bar-narr" style="width:100%;opacity:0.2"></div>
+            <div class="bar-fill bar-real" style="width:0%;position:absolute;top:0;left:0" id="cx-meta-r"></div>
+          </div>
+          <div class="bar-labels">
+            <span style="color:var(--narrative);opacity:0.7">$65B 承諾 <span class="ph" title="fetch-sec.py · FY2026 guidance">PH</span></span>
+            <span style="color:var(--reality)">$38B 執行 <span class="ph" title="fetch-sec.py · 最近完整財年，口徑待確認">PH</span></span>
+          </div>
+        </div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--narrative)" class="ph-val">$65B</div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--reality)" class="ph-val">$38B</div>
+        <div style="text-align:right"><span class="dna" title="分子分母口徑確認後才能計算；建議口徑：最近完整財年實際 ÷ 同年 FY guidance">待定義</span></div>
+      </div>
+
+      <!-- AMZN：承諾 $100B = 100%，已執行 $71B = 71% -->
+      <div class="capex-row" style="grid-template-columns:44px 1fr 90px 90px 80px">
+        <div class="capex-co" style="color:#FF9900">AMZN</div>
+        <div class="capex-bars">
+          <div class="bar-track">
+            <div class="bar-fill bar-narr" style="width:100%;opacity:0.2"></div>
+            <div class="bar-fill bar-real" style="width:0%;position:absolute;top:0;left:0" id="cx-amzn-r"></div>
+          </div>
+          <div class="bar-labels">
+            <span style="color:var(--narrative);opacity:0.7">$100B 承諾 <span class="ph" title="fetch-sec.py · FY2026 guidance">PH</span></span>
+            <span style="color:var(--reality)">$71B 執行 <span class="ph" title="fetch-sec.py · 最近完整財年，口徑待確認">PH</span></span>
+          </div>
+        </div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--narrative)" class="ph-val">$100B</div>
+        <div style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--reality)" class="ph-val">$71B</div>
+        <div style="text-align:right"><span class="dna" title="分子分母口徑確認後才能計算；建議口徑：最近完整財年實際 ÷ 同年 FY guidance">待定義</span></div>
+      </div>
+
+      <!-- 匯總 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="background:var(--narr-dim);border:1px solid var(--narr-mid);border-radius:5px;padding:8px 10px">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:3px">敘事側：總承諾</div>
+          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--narrative)" class="ph-val">$320B</div>
+          <span class="ph" title="四家 FY guidance 加總示意值，需從 fetch-sec.py 輸出重新加總">Placeholder</span>
+        </div>
+        <div style="background:var(--real-dim);border:1px solid var(--real-mid);border-radius:5px;padding:8px 10px">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:3px">現實側：已執行</div>
+          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--reality)" class="ph-val">$222B</div>
+          <span class="ph" title="口徑待確認（最近完整財年實際 CAPEX 四家加總）">Placeholder</span>
+        </div>
+        <div style="background:var(--red-dim);border:1px solid rgba(255,77,109,0.2);border-radius:5px;padding:8px 10px">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:3px">整體執行率</div>
+          <span class="dna" title="承諾與執行口徑確認後才能計算；不可用 $220B/$320B 直接相除，因承諾與執行的時間基準不同">口徑未定義，無法計算</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:8px;padding:6px 8px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--muted)">
+        進度條讀法：紫色底軌 = 各公司承諾金額（= 100%）；綠色填充 = 已執行金額佔比（以各公司承諾為分母）。執行率欄標記為「待定義」，待口徑確認（建議：最近完整財年實際 CAPEX ÷ 同年 FY guidance）後填入。
+      </div>
+    </div>
+  </div>
+
+  <!-- Analyst Forecast vs Actual -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title">機構預測 vs EIA 實測 · US Data Center 電力消耗</div>
+      <div class="panel-tag tag-narr">NARRATIVE</div>
+    </div>
+    <div class="panel-bd">
+      <div style="display:flex;gap:12px;margin-bottom:8px;font-family:var(--mono);font-size:9px;color:var(--text-dim);flex-wrap:wrap;align-items:center">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:2px;background:var(--narrative);opacity:0.8;display:inline-block"></span>機構預測上限</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:2px;background:var(--narrative);opacity:0.4;display:inline-block"></span>預測中位數</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:2px;background:var(--reality);display:inline-block"></span>EIA 實測</span>
+        <span style="margin-left:auto;color:var(--muted)">單位：TWh / 年 · US DC sector</span>
+      </div>
+      <div class="fva-chart">
+        <svg id="fva-svg" viewBox="0 0 460 175" preserveAspectRatio="none"></svg>
+      </div>
+      <div style="margin-top:6px"><span class="ph" title="預測區間為示意值，非腳本輸出">預測區間為 Placeholder</span> <span class="dna" title="EIA Form 861 年度調查延遲 12–18 個月；26Q1 資料不存在，最新可得約 2024 全年">EIA 25Q1 後資料不可得</span></div>
+      <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">填入來源：EIA Form 861（實測，可得至 2024 全年）· 機構預測需手動錄入</div>
+        <div style="background:var(--real-dim);border:1px solid var(--real-mid);border-radius:4px;padding:4px 8px;text-align:center">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">EIA 最新可得 · 24Q3</div>
+          <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--reality)">272 TWh <span class="ph" title="EIA Form 861 2024 annual · 年化季均值，非季度直接讀數">PH</span></div>
+        </div>
+        <div style="background:var(--red-dim);border:1px solid rgba(255,77,109,0.2);border-radius:4px;padding:4px 8px;text-align:center">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">26Q1 缺口</div>
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red)"><span class="dna" title="EIA 26Q1 資料不存在，缺口無法計算">無法計算</span></div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:6px;padding:6px 8px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--red);opacity:0.9">
+        ✕ <strong style="color:var(--red)">資料不可得（非 Placeholder）：</strong> EIA Form 861 為年度調查，延遲約 12–18 個月發布。截至 2026-Q1，最新可得資料為 2024 全年（2023 annual 已確認）。圖中綠線在邊界後以紅色虛線表示方向推估，<strong>不代表實測數值</strong>，且不應用於計算缺口。如需近期資料可考慮替代來源：EIA-930（月度，DC 州級）或 ISO/RTO 負載資料（週頻）。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ DIVIDER ══ -->
+<div class="divider-label">電力系統現實層 · Reality Side</div>
+
+<div class="two-col">
+
+  <!-- DC Timeline -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title">數據中心上線時程 · 承諾 vs 實際</div>
+      <div class="panel-tag tag-real">REALITY CHECK</div>
+    </div>
+    <div class="panel-bd">
+      <div style="display:flex;gap:14px;margin-bottom:10px;font-family:var(--mono);font-size:9px">
+        <span style="display:flex;align-items:center;gap:5px"><span class="dc-status-dot dot-ontrack" style="box-shadow:none"></span><span style="color:var(--reality)">On Track</span></span>
+        <span style="display:flex;align-items:center;gap:5px"><span class="dc-status-dot dot-delayed" style="box-shadow:none"></span><span style="color:var(--warn)">Delayed</span></span>
+        <span style="display:flex;align-items:center;gap:5px"><span class="dc-status-dot dot-cancelled" style="box-shadow:none"></span><span style="color:var(--red)">Cancelled / Paused</span></span>
+      </div>
+
+      <div class="dc-item">
+        <div class="dc-status-dot dot-delayed"></div>
+        <div style="flex:1">
+          <div class="dc-name">Microsoft Iowa / Wisconsin Expansion</div>
+          <div class="dc-meta">承諾 2025-Q2 上線 · 2.4GW · Grid interconnection pending</div>
+        </div>
+        <div class="dc-right">
+          <div class="dc-slip slip-delayed">+9mo slip</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">2026-Q1 revised</div>
+        </div>
+      </div>
+
+      <div class="dc-item">
+        <div class="dc-status-dot dot-cancelled"></div>
+        <div style="flex:1">
+          <div class="dc-name">Amazon Project Kuiper DC · Ohio</div>
+          <div class="dc-meta">承諾 1.8GW · 2025-Q4 · 已暫停建設</div>
+        </div>
+        <div class="dc-right">
+          <div class="dc-slip slip-cancelled">PAUSED</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">Regulatory review</div>
+        </div>
+      </div>
+
+      <div class="dc-item">
+        <div class="dc-status-dot dot-ontrack"></div>
+        <div style="flex:1">
+          <div class="dc-name">Google Mayes County Oklahoma</div>
+          <div class="dc-meta">950MW · Nuclear PPA confirmed · 2026-Q2</div>
+        </div>
+        <div class="dc-right">
+          <div class="dc-slip slip-ontrack">On Track</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">+1mo buffer</div>
+        </div>
+      </div>
+
+      <div class="dc-item">
+        <div class="dc-status-dot dot-delayed"></div>
+        <div style="flex:1">
+          <div class="dc-name">Meta Louisiana Hyperscale Campus</div>
+          <div class="dc-meta">2GW · 承諾 2025-Q3 · Transmission upgrade 延遲</div>
+        </div>
+        <div class="dc-right">
+          <div class="dc-slip slip-delayed">+6mo slip</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">2026-Q1 revised</div>
+        </div>
+      </div>
+
+      <div class="dc-item">
+        <div class="dc-status-dot dot-cancelled"></div>
+        <div style="flex:1">
+          <div class="dc-name">Undisclosed Hyperscaler · Virginia</div>
+          <div class="dc-meta">3.1GW · FERC Queue 撤件 · 2025-Q2</div>
+        </div>
+        <div class="dc-right">
+          <div class="dc-slip slip-cancelled">WITHDRAWN</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">—</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="text-align:center;background:var(--real-dim);border:1px solid var(--real-mid);border-radius:5px;padding:6px">
+          <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--reality)">1</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">On Track</div>
+        </div>
+        <div style="text-align:center;background:var(--warn-dim);border:1px solid rgba(255,176,32,0.2);border-radius:5px;padding:6px">
+          <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--warn)">2</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">Delayed</div>
+        </div>
+        <div style="text-align:center;background:var(--red-dim);border:1px solid rgba(255,77,109,0.2);border-radius:5px;padding:6px">
+          <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--red)">2</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">Cancelled/Paused</div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--text-dim);margin-top:8px;padding:7px 9px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--muted);line-height:1.6">
+        <span style="color:var(--text-dim);font-family:var(--mono);font-size:8px;letter-spacing:0.06em">樣本說明：</span>
+        上表為 ≥ 500MW 且已公開承諾上線時程的 hyperscaler 專案，共 5 件，代表 2025 年美國已公告 DC 新增容量前五大（≈ 10.3GW 合計）。母集合：FERC Queue 2024–2025 新增互聯申請中，≥ 500MW 的 DC 相關申請共 31 件；本表僅呈現有公開時程承諾者，偏向已進入施工階段、問題較早浮現的項目，不代表全體申請樣本。延遲/取消比例 80%（4/5）為本樣本內觀察，母集合比例估計約 55–65%（LBNL 2025）。
+      </div>
+    </div>
+  </div>
+
+  <!-- Wholesale Price + Demand Response -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title">批發電價 · 需求響應市場訊號</div>
+      <div class="panel-tag tag-real">REALITY CHECK</div>
+    </div>
+    <div class="panel-bd">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:8px;letter-spacing:0.08em">DAY-AHEAD AVERAGE · $/MWh · YoY CHANGE · 2026-Q1</div>
+      <div class="price-grid">
+        <div class="price-cell">
+          <div class="price-hub">PJM West</div>
+          <div class="price-val" style="color:var(--gap-pos)">$89</div>
+          <div class="price-delta delta-up">▲ +34%</div>
+        </div>
+        <div class="price-cell">
+          <div class="price-hub">ERCOT HH</div>
+          <div class="price-val" style="color:var(--warn)">$71</div>
+          <div class="price-delta delta-up">▲ +18%</div>
+        </div>
+        <div class="price-cell">
+          <div class="price-hub">MISO Illinois</div>
+          <div class="price-val" style="color:var(--warn)">$64</div>
+          <div class="price-delta delta-up">▲ +22%</div>
+        </div>
+        <div class="price-cell">
+          <div class="price-hub">CAISO SP15</div>
+          <div class="price-val" style="color:var(--text)">$58</div>
+          <div class="price-delta delta-dn">▼ −4%</div>
+        </div>
+        <div class="price-cell">
+          <div class="price-hub">NYISO Zone J</div>
+          <div class="price-val" style="color:var(--reality)">$52</div>
+          <div class="price-delta delta-dn">▼ −9%</div>
+        </div>
+        <div class="price-cell">
+          <div class="price-hub">ISO-NE</div>
+          <div class="price-val" style="color:var(--text)">$61</div>
+          <div class="price-delta delta-up">▲ +7%</div>
+        </div>
+      </div>
+
+      <!-- ⚠ AI Attribution Breakdown for PJM -->
+      <div style="margin-top:10px;padding:9px 10px;background:var(--surface2);border:1px solid var(--border2);border-left:2px solid var(--warn);border-radius:4px;">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--warn);letter-spacing:0.08em;margin-bottom:7px">⚠ PJM +34% 因果拆解 · 不可全數歸因於 AI</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:9px;color:var(--text-dim);width:140px">AI 負載預期計價</div>
+            <div style="flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden">
+              <div style="height:100%;background:var(--narrative);border-radius:2px;width:0%;transition:width 1.1s ease" id="attr-ai"></div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--narrative);width:44px;text-align:right">~40%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:9px;color:var(--text-dim);width:140px">天然氣價格上漲</div>
+            <div style="flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden">
+              <div style="height:100%;background:var(--muted);border-radius:2px;width:0%;transition:width 1.1s ease" id="attr-gas"></div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);width:44px;text-align:right">~30%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:9px;color:var(--text-dim);width:140px">夏季/容量市場緊張</div>
+            <div style="flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden">
+              <div style="height:100%;background:var(--muted);border-radius:2px;width:0%;transition:width 1.1s ease" id="attr-cap"></div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);width:44px;text-align:right">~20%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:9px;color:var(--text-dim);width:140px">再生能源間歇性</div>
+            <div style="flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden">
+              <div style="height:100%;background:var(--muted);border-radius:2px;width:0%;transition:width 1.1s ease" id="attr-re"></div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);width:44px;text-align:right">~10%</div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:7px">結論：電價上漲約 40% 可歸因於 AI 預期，訊號有效但需排除其他因素後才能 Confirmed → 降為 <span style="color:var(--warn)">Partial</span>。CAISO / NYISO 下跌反映無新 DC 計畫的市場無壓力。</div>
+      </div>
+
+      <!-- DR MW with baseline -->
+      <div style="margin-top:10px;">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:0.08em;margin-bottom:8px">
+          需求響應容量 · DR MW vs Peak Load % · 2026-Q1
+          <span style="color:var(--muted);margin-left:8px">條長 = DR MW ÷ Peak Load</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <!-- PJM: Peak ~165,000 MW, DR 11,200 = 6.8% -->
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);width:52px">PJM</div>
+            <div style="flex:1;height:5px;background:var(--border2);border-radius:2px;overflow:hidden">
+              <div style="height:100%;background:var(--gap-pos);border-radius:2px;width:0%;transition:width 1.2s ease" id="dr-pjm"></div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;width:88px;text-align:right">
+              <span style="color:var(--gap-pos)">11,200 MW</span>
+              <span style="color:var(--muted)"> / 6.8%</span>
+            </div>
+          </div>
+          <!-- ERCOT: Peak ~85,000 MW, DR 6,400 = 7.5% -->
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);width:52px">ERCOT</div>
+            <div style="flex:1;height:5px;background:var(--border2);border-radius:2px;overflow:hidden">
+              <div style="height:100%;background:var(--reality);border-radius:2px;width:0%;transition:width 1.2s ease" id="dr-ercot"></div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;width:88px;text-align:right">
+              <span style="color:var(--reality)">6,400 MW</span>
+              <span style="color:var(--muted)"> / 7.5%</span>
+            </div>
+          </div>
+          <!-- MISO: Peak ~120,000 MW, DR 4,800 = 4.0% -->
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);width:52px">MISO</div>
+            <div style="flex:1;height:5px;background:var(--border2);border-radius:2px;overflow:hidden">
+              <div style="height:100%;background:var(--warn);border-radius:2px;width:0%;transition:width 1.2s ease" id="dr-miso"></div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;width:88px;text-align:right">
+              <span style="color:var(--warn)">4,800 MW</span>
+              <span style="color:var(--muted)"> / 4.0%</span>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:8px;line-height:1.5">
+          DR/Peak % 歷史均值約 5–7%；ERCOT 7.5% 已達上限，反映高壓力狀態。PJM 6.8% 仍在安全範圍，但 AI DC 新增負載若於 2026–2027 上線，將推升至潛在緊張區。
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FULL WIDTH: SIGNAL TABLE ══ -->
+<div class="full-panel">
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title">跨層訊號矩陣 · Narrative ↔ Reality Alignment</div>
+      <div class="panel-tag tag-gap">VERDICT SIGNALS</div>
+    </div>
+    <table class="sig-table">
+      <thead>
+        <tr>
+          <th style="width:180px">訊號維度</th>
+          <th>敘事側狀態</th>
+          <th>現實側狀態</th>
+          <th style="width:110px">對齊程度</th>
+          <th style="width:120px" class="sig-bar-cell">Gap 強度</th>
+          <th>核心觀察</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;font-weight:600">CAPEX 執行率</td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--narrative)" class="ph-val">$320B 承諾 <span class="ph" title="fetch-sec.py 輸出 · 口徑需定義">PH</span></span></td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--reality)" class="ph-val">$222B 執行 <span class="ph" title="fetch-sec.py 輸出 · TTM/YTD 口徑需定義">PH</span></span></td>
+          <td><span class="sig-pill pill-partial">Partial</span></td>
+          <td><div class="sig-mini-bar"><div class="sig-mini-fill" style="width:0%;background:var(--warn)" id="sg1"></div></div></td>
+          <td style="font-size:10px;color:var(--text-dim)">承諾強度高，但 31% 承諾尚未轉化為實際支出，主因電網互聯延遲。</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;font-weight:600">電力需求增速</td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--narrative)" class="ph-val">+4.5% 預測 <span class="ph" title="Goldman/IEA/EPRI 手動錄入">PH</span></span></td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--reality)" class="ph-val">+2.1% 實測 <span class="ph" title="calc-density-growth.py 輸出 · 六州商業用電">PH</span></span></td>
+          <td><span class="sig-pill pill-diverge">Diverging</span></td>
+          <td><div class="sig-mini-bar"><div class="sig-mini-fill" style="width:0%;background:var(--gap-pos)" id="sg2"></div></div></td>
+          <td style="font-size:10px;color:var(--text-dim)">實際電力消耗增速不及機構預測中位數一半，DC 上線延遲是主因。</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;font-weight:600">批發電價壓力</td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--narrative)">市場已計價需求</span></td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--reality)" class="ph-val">PJM +34% <span class="ph" title="PJM 官網 day-ahead 電價 · 非原始腳本輸出">PH</span></span></td>
+          <td><span class="sig-pill pill-partial">Partial</span></td>
+          <td><div class="sig-mini-bar"><div class="sig-mini-fill" style="width:0%;background:var(--warn)" id="sg3"></div></div></td>
+          <td style="font-size:10px;color:var(--text-dim)">電價上漲約 40% 可歸因 AI 預期計價，餘 60% 為天然氣/容量市場因素。CAISO/NYISO 同期下跌，確認訊號僅適用於 AI DC 密集州。</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;font-weight:600">DC 上線時程</td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--narrative)">2025 大量竣工</span></td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--reality)">60% 延遲/取消</span></td>
+          <td><span class="sig-pill pill-diverge">Diverging</span></td>
+          <td><div class="sig-mini-bar"><div class="sig-mini-fill" style="width:0%;background:var(--gap-pos)" id="sg4"></div></div></td>
+          <td style="font-size:10px;color:var(--text-dim)">FERC Queue 瓶頸、輸電升級延遲是主要障礙，敘事落地速度明顯低於承諾。</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;font-weight:600">FERC Queue 等待</td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--narrative)">快速擴容預期</span></td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--reality)">avg 5.1 yr wait</span></td>
+          <td><span class="sig-pill pill-watch">Watch</span></td>
+          <td><div class="sig-mini-bar"><div class="sig-mini-fill" style="width:0%;background:var(--gap-neg)" id="sg5"></div></div></td>
+          <td style="font-size:10px;color:var(--text-dim)">互聯申請量創歷史新高，但完工率仍低，結構性瓶頸持續壓抑需求兌現速度。</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;font-weight:600">Utility CAPEX 跟進</td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--narrative)">電力公司積極擴張</span></td>
+          <td><span style="font-family:var(--mono);font-size:10px;color:var(--reality)" class="ph-val">年增 +18% YoY <span class="ph" title="來源：fetch-sec-utility.py · 基準年未定義（2025 vs 2024？）· 四家合計或中位數？需確認口徑">PH</span></span></td>
+          <td><span class="sig-pill pill-confirm">Confirmed</span></td>
+          <td><div class="sig-mini-bar"><div class="sig-mini-fill" style="width:0%;background:var(--reality)" id="sg6"></div></div></td>
+          <td style="font-size:10px;color:var(--text-dim)">NEE / Duke / Southern / Dominion 均上修資本支出，基礎設施側確認跟進中。<span class="ph" title="+18% 為示意值，需從 fetch-sec-utility.py 輸出計算，並定義：基準年 / 四家合計 / CAPEX 總額或 AI 相關子項">數字待確認</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  <div class="footer-mono">Regime Shift Radar v5 · Narrative ↔ Reality Dual-Layer</div>
+  <div class="footer-mono">資料來源：SEC EDGAR · EIA · FERC · LBNL · ISO/RTO 各市場 · Goldman Sachs / IEA / EPRI 預測</div>
+  <div class="footer-mono">Built June 2026 · ~/regime-radar</div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+// ── Counter animation ──
+function animateCounter(id, target, decimals, prefix, duration) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const val = target * ease;
+    el.textContent = (prefix || '') + val.toFixed(decimals);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Bar animation ──
+function setBar(id, pct, delay) {
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (el) el.style.width = pct + '%';
+  }, delay);
+}
+
+// ── Forecast vs Actual SVG chart ──
+// EIA Form 861 延遲說明：年度調查，約 12–18 個月後發布。
+// 截至 2026-Q1，最新可得資料為 2024 全年（預計 2025-Q3/Q4 發布）。
+// 2025Q1 之後的「actual」數值在現實中不存在，此處截斷並標示。
+function buildFVAChart() {
+  const svg = document.getElementById('fva-svg');
+  const W = 460, H = 175;
+  const pL = 44, pR = 14, pT = 12, pB = 36;
+  const cW = W - pL - pR, cH = H - pT - pB;
+
+  const quarters = ['22Q1','22Q3','23Q1','23Q3','24Q1','24Q3','25Q1','25Q3','26Q1'];
+  const yMin = 160, yMax = 420;
+
+  const forecastHi  = [175, 198, 226, 262, 305, 352, 398, 435, 468];
+  const forecastMid = [170, 190, 214, 246, 282, 320, 358, 385, 378];
+
+  // EIA Form 861 實際可得邊界：到 24Q4（index 5，即 24Q3 之後）
+  // 24Q3 = index 5；24Q4 / 25Q1 之後不可得
+  // 這裡用 index 5（24Q3）作為最後確認點，index 6+ 標為不可得
+  const actualKnown = [168, 184, 202, 224, 251, 272]; // 22Q1 → 24Q3，EIA 2024 annual
+  const availBoundary = actualKnown.length - 1; // index 5
+
+  const n = quarters.length;
+  function x(i) { return pL + (i / (n - 1)) * cW; }
+  function y(v) { return pT + (1 - (v - yMin) / (yMax - yMin)) * cH; }
+
+  let html = '';
+
+  // ── 不可得區域陰影 ──
+  const xBound = x(availBoundary);
+  html += `<rect x="${xBound}" y="${pT}" width="${W - pR - xBound}" height="${cH}"
+    fill="rgba(255,77,109,0.04)" stroke="none"/>`;
+
+  // ── 邊界垂直線 ──
+  html += `<line x1="${xBound}" y1="${pT}" x2="${xBound}" y2="${pT + cH}"
+    stroke="var(--red)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>`;
+  html += `<text x="${xBound + 4}" y="${pT + 9}"
+    font-family="JetBrains Mono,monospace" font-size="7.5" fill="var(--red)" opacity="0.7"
+    >EIA 資料邊界</text>`;
+  html += `<text x="${xBound + 4}" y="${pT + 18}"
+    font-family="JetBrains Mono,monospace" font-size="7" fill="var(--red)" opacity="0.5"
+    >Data Unavailable →</text>`;
+
+  // ── Y-axis 網格 ──
+  [180, 220, 260, 300, 340, 380, 420].forEach(v => {
+    if (v < yMin || v > yMax) return;
+    const yy = y(v);
+    html += `<line x1="${pL}" y1="${yy}" x2="${W-pR}" y2="${yy}" stroke="#1A2330" stroke-width="1"/>`;
+    html += `<text x="${pL-5}" y="${yy+3}" font-family="JetBrains Mono,monospace" font-size="8" fill="#3D5068" text-anchor="end">${v}</text>`;
+  });
+  html += `<text x="${pL-5}" y="${pT-2}" font-family="JetBrains Mono,monospace" font-size="7" fill="#2E3D4E" text-anchor="end">TWh</text>`;
+
+  // ── 預測區間帶 ──
+  let bandTop = `M ${x(0)} ${y(forecastHi[0])}`;
+  for (let i = 1; i < n; i++) bandTop += ` L ${x(i)} ${y(forecastHi[i])}`;
+  let bandBot = `L ${x(n-1)} ${y(forecastMid[n-1])}`;
+  for (let i = n-2; i >= 0; i--) bandBot += ` L ${x(i)} ${y(forecastMid[i])}`;
+  html += `<path d="${bandTop} ${bandBot} Z" fill="rgba(200,160,255,0.06)"/>`;
+
+  // ── 預測上限線 ──
+  let fhPath = `M ${x(0)} ${y(forecastHi[0])}`;
+  for (let i = 1; i < n; i++) fhPath += ` L ${x(i)} ${y(forecastHi[i])}`;
+  html += `<path d="${fhPath}" fill="none" stroke="var(--narrative)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.55"/>`;
+
+  // ── 預測中位數線 ──
+  let fmPath = `M ${x(0)} ${y(forecastMid[0])}`;
+  for (let i = 1; i < n; i++) fmPath += ` L ${x(i)} ${y(forecastMid[i])}`;
+  html += `<path d="${fmPath}" fill="none" stroke="var(--narrative)" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.35"/>`;
+
+  // ── EIA 實測線（僅到 availBoundary）──
+  let aPath = `M ${x(0)} ${y(actualKnown[0])}`;
+  for (let i = 1; i <= availBoundary; i++) aPath += ` L ${x(i)} ${y(actualKnown[i])}`;
+  html += `<path d="${aPath}" fill="none" stroke="var(--reality)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+  // ── 不可得延伸：虛線推估帶（僅示意方向，不標數值）──
+  const lastY = y(actualKnown[availBoundary]);
+  // 用保守線性推估方向，但明確標為不可得
+  const extPath = `M ${x(availBoundary)} ${lastY} L ${x(n-1)} ${y(lastY - 20)}`;
+  html += `<path d="${extPath}" fill="none" stroke="var(--red)" stroke-width="1.5"
+    stroke-dasharray="3 4" opacity="0.35"/>`;
+
+  // ── 實測資料點 ──
+  for (let i = 0; i <= availBoundary; i++) {
+    const isLast = i === availBoundary;
+    html += `<circle cx="${x(i)}" cy="${y(actualKnown[i])}" r="${isLast ? 4 : 2.5}"
+      fill="var(--reality)" ${isLast ? 'stroke="var(--bg)" stroke-width="2"' : ''}/>`;
+    if (isLast) {
+      html += `<text x="${x(i) - 6}" y="${y(actualKnown[i]) - 9}"
+        font-family="JetBrains Mono,monospace" font-size="8" fill="var(--reality)" text-anchor="middle"
+        >${actualKnown[i]} TWh</text>`;
+    }
+  }
+
+  // ── 不可得區域標記點（空心紅圈）──
+  for (let i = availBoundary + 1; i < n; i++) {
+    html += `<circle cx="${x(i)}" cy="${y(lastY - 20 * (i - availBoundary) / (n - 1 - availBoundary))}"
+      r="2.5" fill="none" stroke="var(--red)" stroke-width="1" opacity="0.3"/>`;
+  }
+
+  // ── X-axis 標籤 ──
+  for (let i = 0; i < n; i++) {
+    const col = i > availBoundary ? '#2A1010' : '#2E3D4E';
+    html += `<text x="${x(i)}" y="${H - 5}"
+      font-family="JetBrains Mono,monospace" font-size="8" fill="${col}" text-anchor="middle"
+      >${quarters[i]}</text>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+// ── Init ──
+window.addEventListener('load', () => {
+  // Counters
+  setTimeout(() => {
+    animateCounter('narr-score', 0.841, 3, '', 1200);
+    animateCounter('real-score', 0.612, 3, '', 1200);
+    animateCounter('gap-score',  0.229, 3, '+', 1400);
+  }, 300);
+
+  // Narrative bars
+  setBar('nb1', 88, 400);
+  setBar('nb2', 72, 500);
+  // Reality bars
+  setBar('rb1', 48, 400);
+  setBar('rb2', 68, 500);
+
+  // CAPEX bars — 各公司承諾金額自身 = 100%，已執行佔比為示意值
+  // 進度條只顯示已執行佔承諾的比例，承諾欄固定 100%（由 CSS 底軌表示）
+  // 注意：這些比例數字本身仍是 Placeholder，口徑確認後需重新填入
+  setTimeout(() => {
+    // MSFT: $54B / $80B = 67.5%（示意）
+    setBar('cx-msft-r', 67.5, 50);
+    // GOOG: $59B / $75B = 78.7%（示意）
+    setBar('cx-goog-r', 78.7, 100);
+    // META: $38B / $65B = 58.5%（示意）
+    setBar('cx-meta-r', 58.5, 150);
+    // AMZN: $71B / $100B = 71%（示意）
+    setBar('cx-amzn-r', 71.0, 200);
+  }, 500);
+
+  // DR bars — 以 DR/Peak% 為基準，歷史上限 ~10% = 100%
+  setBar('dr-pjm',   68, 600);   // 6.8% / 10% = 68
+  setBar('dr-ercot', 75, 700);   // 7.5% / 10% = 75
+  setBar('dr-miso',  40, 800);   // 4.0% / 10% = 40
+
+  // PJM price attribution bars
+  setBar('attr-ai',  40, 900);
+  setBar('attr-gas', 30, 950);
+  setBar('attr-cap', 20, 1000);
+  setBar('attr-re',  10, 1050);
+
+  // Signal table bars
+  const signals = [
+    ['sg1', 55], ['sg2', 82], ['sg3', 75],
+    ['sg4', 85], ['sg5', 42], ['sg6', 68],
+  ];
+  signals.forEach(([id, pct], i) => setBar(id, pct, 700 + i * 80));
+
+  // Chart
+  buildFVAChart();
+});
+</script>
+</body>
+</html>

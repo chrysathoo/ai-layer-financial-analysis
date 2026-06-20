@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 產業四層財務分析（數據基準 v0.9）</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0f11;--bg2:#16181c;--bg3:#1e2028;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8e6df;--text2:#9a9890;--text3:#5a5856;
+  --teal:#1D9E75;--tealD:rgba(29,158,117,0.14);--tealT:#5DCAA5;
+  --purple:#534AB7;--purpleD:rgba(83,74,183,0.14);--purpleT:#AFA9EC;
+  --coral:#993C1D;--coralD:rgba(153,60,29,0.14);--coralT:#F0997B;
+  --blue:#185FA5;--blueD:rgba(24,95,165,0.14);--blueT:#85B7EB;
+  --amber:#854F0B;--amberD:rgba(133,79,11,0.14);--amberT:#EF9F27;
+  --font:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;
+  --mono:'SF Mono','Fira Code',monospace;
+  --r:8px;--r2:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;min-height:100vh}
+.shell{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+/* sidebar */
+.sidebar{background:var(--bg2);border-right:.5px solid var(--border);padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.logo{padding:0 18px 18px;border-bottom:.5px solid var(--border);margin-bottom:6px}
+.logo-t{font-size:13px;font-weight:600;letter-spacing:.02em}
+.logo-s{font-size:11px;color:var(--text3);margin-top:2px}
+.data-baseline-badge{font-size:10px;color:var(--tealT);background:var(--tealD);border:.5px solid var(--teal);border-radius:5px;padding:3px 7px;margin-top:8px;line-height:1.4}
+.nav-sec{padding:10px 18px 3px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.nav-item.active{color:var(--text);border-left-color:var(--teal);background:var(--tealD)}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.nav-footer{margin-top:auto;padding:12px 18px;font-size:11px;color:var(--text3);border-top:.5px solid var(--border)}
+/* main */
+.main{padding:24px 28px;overflow-x:hidden}
+.section{display:none}.section.active{display:block}
+/* header */
+.sync-banner{display:flex;align-items:flex-start;gap:8px;background:var(--amberD);border:.5px solid var(--amber);border-radius:var(--r);padding:8px 12px;margin-bottom:16px;font-size:11px;color:var(--text2);line-height:1.5}
+.sync-icon{flex-shrink:0;font-size:13px;color:var(--amberT);margin-top:1px}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.ph-title{font-size:20px;font-weight:600}
+.ph-sub{font-size:12px;color:var(--text3);margin-top:3px}
+.hc{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* pills */
+.pg{display:flex;gap:4px;flex-wrap:wrap}
+.pill{padding:5px 11px;border-radius:20px;font-size:12px;cursor:pointer;border:.5px solid var(--border2);color:var(--text2);background:transparent;transition:all .15s;font-family:var(--font);white-space:nowrap}
+.pill:hover{color:var(--text);background:var(--bg3)}
+.pill.active{color:var(--text);border-color:transparent}
+.pill.all.active{background:rgba(255,255,255,0.07);color:var(--text);border-color:var(--border2)}
+.pill.l0.active{background:var(--tealD);color:var(--tealT);border-color:var(--teal)}
+.pill.l1.active{background:var(--purpleD);color:var(--purpleT);border-color:var(--purple)}
+.pill.l2.active{background:var(--coralD);color:var(--coralT);border-color:var(--coral)}
+.pill.l2h.active{background:var(--blueD);color:var(--blueT);border-color:var(--blue)}
+.pill.l3.active{background:var(--amberD);color:var(--amberT);border-color:var(--amber)}
+/* sankey layout */
+.sk-wrap{display:grid;grid-template-columns:1fr 240px;gap:0;border:.5px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.sk-canvas{position:relative;overflow:hidden}
+.sk-panel{background:var(--bg2);border-left:.5px solid var(--border);padding:20px;overflow-y:auto;max-height:600px}
+.sk-panel-empty{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3);font-size:12px;text-align:center;line-height:1.8}
+/* tooltip */
+.tooltip{position:fixed;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 13px;font-size:12px;color:var(--text);pointer-events:none;z-index:999;max-width:220px;line-height:1.55;display:none;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.tt-label{font-weight:500;margin-bottom:4px;color:var(--text)}
+.tt-row{display:flex;justify-content:space-between;gap:16px;color:var(--text2)}
+.tt-val{font-family:var(--mono);font-size:11px;color:var(--tealT)}
+.tt-quality{font-size:10px;color:var(--text3);margin-top:4px}
+/* panel */
+.pd-badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500;margin-bottom:8px}
+.pd-name{font-size:15px;font-weight:600;margin-bottom:8px;padding-bottom:8px;border-bottom:.5px solid var(--border)}
+.pd-desc{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:14px}
+.pd-stitle{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin:10px 0 5px}
+.pd-kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 0;border-top:.5px solid var(--border);font-size:12px}
+.pd-kv:first-of-type{border-top:none}
+.pd-k{color:var(--text2);flex:1}
+.pd-v{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);white-space:nowrap}
+.pd-q{font-size:10px}
+.pd-rel{display:flex;gap:6px;font-size:12px;color:var(--text2);padding:3px 0;line-height:1.5;border-top:.5px solid var(--border)}
+.pd-rel:first-of-type{border-top:none}
+.pd-arrow{flex-shrink:0;font-size:11px;margin-top:2px}
+/* data table */
+.sw{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.si{position:relative}
+.si input{background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:7px 12px 7px 30px;font-size:13px;color:var(--text);width:200px;outline:none;font-family:var(--font)}
+.si input::placeholder{color:var(--text3)}
+.si input:focus{border-color:var(--teal)}
+.si-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.dtw{overflow-x:auto;border-radius:var(--r2);border:.5px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--bg2)}
+th{padding:9px 13px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;border-bottom:.5px solid var(--border2);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--text2)}
+td{padding:8px 13px;border-bottom:.5px solid var(--border);color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.03);color:var(--text)}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.tl0{background:var(--tealD);color:var(--tealT)}
+.tl1{background:var(--purpleD);color:var(--purpleT)}
+.tl2{background:var(--coralD);color:var(--coralT)}
+.tl2h{background:var(--blueD);color:var(--blueT)}
+.tl3{background:var(--amberD);color:var(--amberT)}
+.qs{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:500}
+.qc{color:#5DCAA5}.qo{color:#EF9F27}.qe{color:#F0997B}.qg{color:#9a9890}.qp{color:#AFA9EC}
+.no-res{padding:36px;text-align:center;color:var(--text3);font-size:13px}
+/* gaps */
+.gg{display:grid;gap:9px}
+.gi{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);padding:13px 15px;display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:start}
+.gi-s{font-size:16px;line-height:1;margin-top:1px}
+.gi-n{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+.gi-r{font-size:12px;color:var(--text3);line-height:1.5}
+.vt{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;background:var(--purpleD);color:var(--purpleT);white-space:nowrap}
+.vtn{background:var(--tealD);color:var(--tealT)}
+.vtc{background:rgba(80,80,80,.2);color:var(--text3);text-decoration:line-through}
+.perm-structural{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;background:rgba(154,152,144,.15);color:#9a9890;white-space:nowrap;border:.5px solid rgba(154,152,144,.3)}
+.perm-pending{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;background:var(--tealD);color:var(--tealT);white-space:nowrap;border:.5px solid rgba(93,202,165,.3)}
+.gi-trigger{font-size:11px;color:var(--tealT);margin-top:5px;padding-top:5px;border-top:.5px dashed var(--border)}
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:680px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;flex-direction:row;overflow-x:auto;padding:10px 0;border-right:none;border-bottom:.5px solid var(--border)}
+  .logo,.nav-footer,.nav-sec{display:none}
+  .nav-item{padding:6px 13px;border-left:none;border-bottom:2px solid transparent;white-space:nowrap}
+  .nav-item.active{border-left-color:transparent;border-bottom-color:var(--teal)}
+  .main{padding:14px}
+  .sk-wrap{grid-template-columns:1fr}
+  .sk-panel{border-left:none;border-top:.5px solid var(--border);max-height:none}
+}
+</style>
+</head>
+<body>
+<div class="tooltip" id="tt"></div>
+
+<div class="shell">
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-t">AI 四層分析</div>
+    <div class="logo-s">展示層 · 2026 Q2</div>
+    <div class="data-baseline-badge" id="data-baseline">數據基準：layer_analysis v0.9</div>
+  </div>
+  <div class="nav-sec">視圖</div>
+  <div class="nav-item active" onclick="showSec('sankey',this)"><span class="nav-dot" style="background:var(--teal)"></span>桑基圖</div>
+  <div class="nav-item" onclick="showSec('data',this)"><span class="nav-dot" style="background:var(--purple)"></span>數據總覽</div>
+  <div class="nav-item" onclick="showSec('gaps',this)"><span class="nav-dot" style="background:var(--amber)"></span>數據缺口</div>
+  <div class="nav-footer">下次更新<br>2026 Q3 財報週<br><br><span style="opacity:.7">⚠️ 篇幅不均=資料可得性<br>非重要性排序</span></div>
+</nav>
+
+<main class="main">
+
+<!-- ══════ SANKEY ══════ -->
+<div class="section active" id="sec-sankey">
+  <div class="sync-banner">
+    <span class="sync-icon">⎌</span>
+    <span>本展示層數據對應 <b>layer_analysis.md v0.8</b> 與 <b>comparison.md v0.8</b>。若兩份分析文件已更新但此標籤未變動，數字可能落後分析層。</span>
+  </div>
+  <div class="ph">
+    <div><div class="ph-title">產業資金流向</div>
+    <div class="ph-sub">流寬 = 金額規模 · 懸停顯示數字 · 點節點查看完整比值 · DEMAND-a比值序列：0.26→0.47→0.50</div></div>
+    <div class="hc">
+      <div class="pg" id="lp">
+        <button class="pill all active" onclick="filterL('all',this)">全部</button>
+        <button class="pill l0" onclick="filterL('l0',this)">L0 基礎</button>
+        <button class="pill l1" onclick="filterL('l1',this)">L1 算力</button>
+        <button class="pill l2" onclick="filterL('l2',this)">L2 模型</button>
+        <button class="pill l3" onclick="filterL('l3',this)">L3 應用</button>
+      </div>
+      <div class="pg">
+        <button class="pill all active" id="mv-btn" onclick="toggleMode(this)">💰 支出視角</button>
+      </div>
+    </div>
+  </div>
+  <div class="sk-wrap">
+    <div class="sk-canvas"><svg id="sk" width="100%" viewBox="0 0 760 800"></svg></div>
+    <div class="sk-panel" id="sk-panel"><div class="sk-panel-empty" id="sk-empty">點擊節點<br>查看完整<br>金額比值</div><div id="sk-detail" style="display:none"></div></div>
+  </div>
+</div>
+
+<!-- ══════ DATA ══════ -->
+<div class="section" id="sec-data">
+  <div class="ph">
+    <div><div class="ph-title">數據總覽</div>
+    <div class="ph-sub">✅ SEC確認　⚠️ 官方聲明　📊 估計值　❌ 缺口　🔗 代理</div></div>
+    <div class="hc">
+      <div class="si"><span class="si-icon">⌕</span><input type="text" placeholder="搜尋…" oninput="filterTbl(this.value)"></div>
+      <div class="pg" id="dlp">
+        <button class="pill all active" onclick="filterTblL('all',this)">全部</button>
+        <button class="pill l0" onclick="filterTblL('l0',this)">L0</button>
+        <button class="pill l1" onclick="filterTblL('l1',this)">L1</button>
+        <button class="pill l2" onclick="filterTblL('l2',this)">L2</button>
+        <button class="pill l2h" onclick="filterTblL('l2h',this)">L2雲端</button>
+        <button class="pill l3" onclick="filterTblL('l3',this)">L3</button>
+      </div>
+    </div>
+  </div>
+  <div class="dtw"><table><thead><tr>
+    <th onclick="srt(0)">層級</th><th onclick="srt(1)">公司</th><th onclick="srt(2)">指標</th>
+    <th onclick="srt(3)">數值</th><th onclick="srt(4)">期間</th><th onclick="srt(5)">品質</th><th>來源</th>
+  </tr></thead><tbody id="dtb"></tbody></table>
+  <div class="no-res" id="nr" style="display:none">沒有符合的數據</div></div>
+</div>
+
+<!-- ══════ GAPS ══════ -->
+<div class="section" id="sec-gaps">
+  <div class="ph">
+    <div><div class="ph-title">數據缺口追蹤</div><div class="ph-sub">v0.2 更新狀態</div></div>
+    <div class="hc"><div class="pg">
+      <button class="pill all active" onclick="filterG('all',this)">全部</button>
+      <button class="pill" onclick="filterG('open',this)" style="border-color:var(--amber)">待補</button>
+      <button class="pill" onclick="filterG('structural',this)" style="border-color:#9a9890">🔒 結構性</button>
+      <button class="pill" onclick="filterG('pending',this)" style="border-color:#5DCAA5">⏳ 階段性</button>
+      <button class="pill" onclick="filterG('closed',this)" style="border-color:var(--teal)">v0.2 關閉</button>
+      <button class="pill" onclick="filterG('v03closed',this)" style="border-color:var(--tealT)">v0.3 關閉</button>
+      <button class="pill" onclick="filterG('v03clarified',this)" style="border-color:var(--blue)">v0.3 釐清</button>
+    </div></div>
+  </div>
+  <div class="gg" id="gg"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// FLOWS DATA
+// value = USD billions, quality label
+// src / tgt = node ids
+// ─────────────────────────────────────────────
+const FLOWS = [
+  // L0 → L1
+  {id:'f01',s:'pow',t:'hyp', label:'供電費用', spend:8,  revenue:8,  spendQ:'🔗',revenueQ:'🔗', note:'估算：Hyperscaler 年電費約 $6–10B，無公開確認數字', layer:'l0'},
+  {id:'f02',s:'tsc',t:'nv',  label:'晶圓代工', spend:26, revenue:26, spendQ:'📊',revenueQ:'📊', note:'估算：NVIDIA 佔台積電收入約 22–25%（$122.4B × 22%）', layer:'l0'},
+  {id:'f03',s:'tsc',t:'amd', label:'晶圓代工', spend:8,  revenue:8,  spendQ:'📊',revenueQ:'📊', note:'估算：AMD 佔台積電收入約 6–8%', layer:'l0'},
+  {id:'f04',s:'tsc',t:'hyp', label:'自研晶片代工', spend:6, revenue:6, spendQ:'📊',revenueQ:'📊', note:'估算：Google TPU / Amazon Trainium 代工費用', layer:'l0'},
+  {id:'f05',s:'eq', t:'hyp', label:'設備採購', spend:15, revenue:15, spendQ:'📊',revenueQ:'📊', note:'估算：Vertiv + Arista 合計，Hyperscaler 為主要客戶', layer:'l0'},
+  // L1 → L2
+  {id:'f10',s:'nv', t:'hyp', label:'GPU 銷售', spend:180,revenue:180,spendQ:'📊',revenueQ:'📊', note:'估算：NVIDIA 資料中心 FY2026 $209B × Hyperscaler 佔比約 85%', layer:'l1'},
+  {id:'f11',s:'amd',t:'hyp', label:'GPU 銷售', spend:14, revenue:14, spendQ:'✅',revenueQ:'✅', note:'AMD 資料中心 2025 全年 $16.6B，Hyperscaler 為主要客戶', layer:'l1'},
+  {id:'f12',s:'hyp',t:'oai', label:'算力租用', spend:7,  revenue:7,  spendQ:'📊',revenueQ:'📊', note:'估算：OpenAI 推論+訓練算力成本，主要在 Azure', layer:'l2'},
+  {id:'f13',s:'hyp',t:'ant', label:'算力租用', spend:5,  revenue:5,  spendQ:'📊',revenueQ:'📊', note:'估算：Anthropic 算力租用，AWS + GCP + SpaceX Colossus', layer:'l2'},
+  {id:'f14',s:'hyp',t:'cm',  label:'自有算力', spend:60, revenue:60, spendQ:'📊',revenueQ:'📊', note:'估算：Hyperscaler 自有模型推論 + 訓練算力（內部成本）', layer:'l2'},
+  {id:'f15',s:'hyp',t:'cr',  label:'算力+授權成本', spend:20,revenue:20,spendQ:'📊',revenueQ:'📊', note:'估算：轉售業務的算力成本 + API 授權費用', layer:'l2'},
+  // L2 licensing
+  {id:'f20',s:'oai',t:'cr',  label:'API 授權費', spend:1.5,revenue:1.5,spendQ:'📊',revenueQ:'📊', note:'估算：OpenAI 向 Azure 收取的 API 授權費', layer:'l2', dashed:true},
+  {id:'f21',s:'ant',t:'cr',  label:'API 授權費', spend:0.8,revenue:0.8,spendQ:'📊',revenueQ:'📊', note:'估算：Anthropic 向 Bedrock/Vertex 收取授權費', layer:'l2', dashed:true},
+  // L2 → L3
+  {id:'f30',s:'oai',t:'l3',  label:'API + 訂閱', spend:13, revenue:13, spendQ:'📊',revenueQ:'📊', note:'OpenAI 2025 全年收入 $13B（The Information 估計）', layer:'l2'},
+  {id:'f31',s:'ant',t:'l3',  label:'API + 訂閱', spend:4.5,revenue:4.5,spendQ:'📊',revenueQ:'📊', note:'Anthropic 2025 全年收入 $4.5B（The Information 估計）', layer:'l2'},
+  {id:'f32',s:'cm', t:'l3',  label:'雲端AI服務', spend:25, revenue:25, spendQ:'📊',revenueQ:'📊', note:'估算：AWS/Azure/GCP AI 服務收入（Bedrock/Copilot/Vertex 自有模型部分）', layer:'l2'},
+  {id:'f33',s:'cr', t:'l3',  label:'API 轉售', spend:8,  revenue:8,  spendQ:'📊',revenueQ:'📊', note:'估算：雲端平台轉售 OpenAI/Anthropic API 收入', layer:'l2'},
+];
+
+const NODES = {
+  pow:{id:'pow',label:'電力/土地',sub:'公用事業',layer:'l0',col:0,row:0,
+    spend_total:8, spend_Q:'🔗', revenue_total:8, revenue_Q:'🔗',
+    badge:'#0F6E56',badgeT:'#5DCAA5',
+    desc:'AI產業最底層的物理資源供應方，對應黃仁勳五層第1層（Energy）。EIA Form 861 確認序列（22Q1–24Q3）：168→184→202→224→251→272 TWh，最後確認點 272 TWh（2024 Q3）。機構預測持續高估約 68 TWh，反映敘事超前於現實。2025 後 EIA 數字不可得（發布延遲 12–18 個月）。電網互聯申請創歷史新高但完工率低，為物理瓶頸。',
+    metrics:[
+      {k:'TWh序列最後確認點（2024 Q3）',v:'272 TWh/年',q:'🔗'},{k:'EIA資料邊界',v:'2024全年（2025後不可得）',q:'🔗'},
+      {k:'TWh起始點（2022 Q1）',v:'168 TWh/年',q:'🔗'},{k:'確認期間增速',v:'+62%（22Q1→24Q3）',q:'🔗'},
+      {k:'機構預測 vs 實測落差',v:'~68 TWh 預測高估',q:'📊'},{k:'電網互聯申請',v:'創歷史新高，完工率低',q:'🔗'},
+      {k:'Utility CapEx 跟進',v:'❌ Placeholder，口徑待定義',q:'❌'},{k:'CapEx執行率',v:'❌ 口徑未定義，不補入數字',q:'❌'},
+      {k:'來源文件',v:'Regime Shift Radar v5（自主構建，EIA/FERC/GS/IEA/EPRI）',q:'📊'}
+    ],
+    out:['→ 供電給 Hyperscaler 自建資料中心'],
+    ins:['← 電費含在 Hyperscaler CapEx 中']},
+  tsc:{id:'tsc',label:'台積電',sub:'晶片製造',layer:'l0',col:0,row:1,
+    spend_total:40, spend_Q:'✅', revenue_total:122, revenue_Q:'✅',
+    badge:'#0F6E56',badgeT:'#5DCAA5',
+    desc:'全球最先進半導體製造商。2025 年合併營收 $122.4B（+35.9% YoY），毛利率 59.9%。',
+    metrics:[
+      {k:'2025 合併營收',v:'$122.4B',q:'✅'},{k:'毛利率',v:'59.9%',q:'✅'},
+      {k:'AI加速器佔比',v:'~15–19%',q:'⚠️'},{k:'NVIDIA 佔收入',v:'~22–25%',q:'📊'},
+      {k:'2026 CapEx 指引',v:'$52–56B',q:'⚠️'}
+    ],
+    out:['→ 為 NVIDIA/AMD/TPU/Trainium 製造晶片'],
+    ins:['← 晶圓代工費（NVIDIA 最大客戶）']},
+  eq:{id:'eq',label:'Vertiv·Arista',sub:'設備商',layer:'l0',col:0,row:2,
+    spend_total:15, spend_Q:'📊', revenue_total:19, revenue_Q:'✅',
+    badge:'#0F6E56',badgeT:'#5DCAA5',
+    desc:'Vertiv 2025 營收 $10.2B（+28%），backlog $15B。Arista 2025 營收 $9B。',
+    metrics:[
+      {k:'Vertiv 2025 營收',v:'$10.2B',q:'✅'},{k:'Vertiv YoY',v:'+28%',q:'✅'},
+      {k:'Vertiv 調整後營業利益率',v:'20.4%',q:'✅'},{k:'Vertiv 2026 指引',v:'$13.25–13.75B',q:'⚠️'},
+      {k:'Arista 2025 營收',v:'$9B',q:'✅'},{k:'Vertiv backlog',v:'$15B',q:'✅'}
+    ],
+    out:['→ 冷卻/網路設備交付 Hyperscaler'],
+    ins:['← 設備採購款含在 Hyperscaler CapEx']},
+  nv:{id:'nv',label:'NVIDIA',sub:'GPU供應',layer:'l1',col:1,row:0,
+    spend_total:180, spend_Q:'📊', revenue_total:216, revenue_Q:'✅',
+    badge:'#3C3489',badgeT:'#AFA9EC',
+    desc:'FY2026 全年營收 $215.9B（+65% YoY），資料中心佔比 >90%，GAAP 毛利率 71.1%。H20 出口管制造成 Q1 FY2027 一次性損失 $4.5B。⚠️ Layer 2 延伸：DGX Cloud（算力租用）、NIM（模型推論微服務）、AI Enterprise（軟體訂閱）正在向 Layer 2 延伸，與 Hyperscaler 的關係從純粹買賣走向競爭。相關收入包含在資料中心分部，未單獨披露，為質性觀察。',
+    metrics:[
+      {k:'FY2026 總營收',v:'$215.9B',q:'✅'},{k:'YoY',v:'+65%',q:'✅'},
+      {k:'GAAP 毛利率',v:'71.1%',q:'✅'},{k:'Q4 資料中心營收',v:'$62.3B',q:'✅'},
+      {k:'H20 管制損失',v:'-$4.5B',q:'✅'},{k:'Q1 FY2027 毛利率',v:'60.5%',q:'✅'},
+      {k:'Layer 2延伸：DGX Cloud',v:'算力租用，收入含在資料中心分部，未單獨披露',q:'❌'},
+      {k:'Layer 2延伸：NIM微服務',v:'模型推論封裝，與Bedrock/Vertex/Gemini競爭',q:'❌'},
+      {k:'Layer 2延伸方向',v:'硬體供應商→硬體+算力+推論多層收款方',q:'⚠️'},
+      {k:'供應鏈毛利率定位',v:'73–75%，拿走鏈中最高且最確定份額',q:'✅'}
+    ],
+    out:['→ GPU 銷售給 Hyperscaler（~85%）','→ GPU 銷售給 OpenAI/Anthropic（~10%）'],
+    ins:['← 台積電代工製造','← GPU 採購款']},
+  amd:{id:'amd',label:'AMD',sub:'GPU·CPU',layer:'l1',col:1,row:1,
+    spend_total:14, spend_Q:'✅', revenue_total:17, revenue_Q:'✅',
+    badge:'#3C3489',badgeT:'#AFA9EC',
+    desc:'2025 年資料中心分部營收 $16.6B（+32% YoY）。全公司 GAAP 毛利率 50%（較 FY2024 僅+1ppt，Client/Gaming 低毛利業務持續拖累）。❌ 分部 gross margin 未披露，與 NVIDIA 分部毛利率（~74–75%）雙重不可比：口徑不同＋業務組成不同。',
+    metrics:[
+      {k:'資料中心 2025 營收',v:'$16.6B',q:'✅'},{k:'YoY',v:'+32%',q:'✅'},
+      {k:'分部營業利益率（代理）',v:'~21.7%',q:'🔗'},{k:'分部 gross margin',v:'❌ 未披露',q:'❌'},
+      {k:'全公司 GAAP 毛利率',v:'50%',q:'✅'},{k:'vs FY2024',v:'+1ppt（49%→50%）',q:'✅'},
+      {k:'Q4 2025 資料中心',v:'$5.4B（+39% YoY）',q:'✅'},
+      {k:'不可比原因①',v:'口徑：operating margin ≠ gross margin',q:'❌'},
+      {k:'不可比原因②',v:'組成：EPYC+MI+網路+rack-scale',q:'❌'},
+      {k:'非GAAP毛利率（產業交叉確認）',v:'54–57%，明顯低於NVIDIA',q:'✅'}
+    ],
+    out:['→ GPU（MI300）銷售給 Hyperscaler','→ CPU（EPYC）廣泛用於伺服器'],
+    ins:['← 台積電代工','← 硬體採購款']},
+  hyp:{id:'hyp',label:'Hyperscaler',sub:'Google·MS·Amazon',layer:'l1',col:1,row:2,
+    spend_total:725, spend_Q:'⚠️', revenue_total:350, revenue_Q:'📊',
+    badge:'#0C447C',badgeT:'#85B7EB',
+    desc:'Hyperscaler公司（DEMAND-a計算成員）：Microsoft + Amazon + Alphabet + Meta。分部營益率：AWS 37.7%、Azure/IC 46.3%、Google Cloud 32.9%（YoY大幅改善）。Google Cloud margin擴張最快，反映規模效應顯現。Amazon自研晶片run-rate已超$20B。❌核心缺口：算力租用獨立毛利率未拆分，Layer 2公司支付給Hyperscaler的算力費佔比未知。DEMAND-a比值序列：0.26→0.47→0.50，方向收斂但仍遠低於1.0。',
+    metrics:[
+      {k:'DEMAND-a比值序列',v:'0.26（Q3 2025）→0.47（Q4）→0.50（2026Q1）',q:'✅'},
+      {k:'CapEx季度趨勢',v:'$113.4B→$127.0B→$130.6B',q:'✅'},
+      {k:'CapEx YoY序列',v:'Q3+103% / Q4+72.4% / 2026Q1+86%',q:'✅/⚠️'},
+      {k:'2026 全年 CapEx 指引',v:'$695–725B',q:'⚠️'},
+      {k:'Amazon CapEx（Q3/Q4/2026Q1）',v:'$35.1B / $39.5B / $44.2B',q:'✅'},
+      {k:'Microsoft CapEx（Q3/Q4/2026Q1）',v:'$34.9B / $37.5B / $30.9B',q:'✅'},
+      {k:'Alphabet CapEx（Q3/Q4/2026Q1）',v:'$24.0B / $27.9B / $35.7B',q:'✅'},
+      {k:'Meta CapEx（Q3/Q4/2026Q1）',v:'$19.4B / $22.1B / $19.8B',q:'✅'},
+      {k:'Hyperscaler公司合計 Q1 2025',v:'$70.2B（✅確認）',q:'✅'},
+      {k:'成員定義',v:'MS+Amazon+Alphabet+Meta（可擴充）',q:'✅'},
+      {k:'AWS 收入 YoY',v:'+28%',q:'✅'},{k:'Azure AI run rate YoY',v:'+123%',q:'⚠️'},
+      {k:'GCP 收入 YoY',v:'+63%',q:'✅'},
+      {k:'AWS分部營益率',v:'37.7%（2026 Q1）',q:'✅'},{k:'Azure/IC分部營益率',v:'46.3%（Q3 FY26）',q:'✅'},
+      {k:'Google Cloud營益率',v:'32.9%（2026Q1，YoY+15.1ppt自17.8%）',q:'✅'},
+      {k:'Microsoft Cloud毛利率',v:'66%（Q3 FY26）',q:'✅'},
+      {k:'Amazon自研晶片run-rate',v:'>$20B（Graviton+Trainium+Nitro，三位數YoY）',q:'⚠️'},
+      {k:'核心缺口',v:'算力租用獨立毛利率未拆分（含在整體雲端業務）',q:'❌'}
+    ],
+    out:['→ 算力租用給 OpenAI/Anthropic','→ 自有模型（Gemini/Phi/Nova）供應','→ 轉售 OpenAI/Anthropic API'],
+    ins:['← 大量採購 NVIDIA/AMD GPU','← 向台積電取得自研晶片','← Vertiv/Arista 設備','↔ 與 OpenAI/Anthropic 合作兼競爭']},
+  oai:{id:'oai',label:'OpenAI',sub:'GPT·o系列',layer:'l2',col:2,row:0,
+    spend_total:8.4, spend_Q:'📊', revenue_total:13, revenue_Q:'📊',
+    badge:'#712B13',badgeT:'#F0997B',
+    desc:'2025 全年收入 $13B，2026-03 ARR $25B。Operating margin 約 -122%，高度依賴融資。S-1 機密提交官方宣布：2026-06-08（公司部落格）；原記載 2026-05-22 為媒體傳聞，已更正。',
+    metrics:[
+      {k:'2025 全年收入',v:'$13B',q:'📊'},{k:'ARR（2026-03）',v:'$25B',q:'⚠️'},
+      {k:'推論成本',v:'$8.4B/yr',q:'📊'},{k:'整體毛利率',v:'33%',q:'📊'},{k:'推論成本佔收入',v:'~65%（$8.4B÷$13B推算）',q:'🔗'},
+      {k:'GPT-5 毛利率',v:'~48%',q:'📊'},{k:'Operating margin',v:'~-122%',q:'📊'},
+      {k:'消費者訂閱用戶',v:'5,000萬',q:'⚠️'},{k:'企業用戶',v:'900萬',q:'⚠️'},
+      {k:'估值',v:'$852B',q:'⚠️'},
+      {k:'S-1官方宣布提交',v:'2026-06-08',q:'⚠️'},{k:'原記載2026-05-22',v:'媒體傳聞，已更正',q:'📊'}
+    ],
+    out:['→ API 銷售給 SaaS/開發者/企業（>40%）','→ ChatGPT 直面終端用戶','→ 授權給 Azure OpenAI'],
+    ins:['← Azure 算力租用（主要）','← API 訂閱費 + 企業合約','← 融資']},
+  ant:{id:'ant',label:'Anthropic',sub:'Claude系列',layer:'l2',col:2,row:1,
+    spend_total:5, spend_Q:'📊', revenue_total:4.5, revenue_Q:'📊',
+    badge:'#712B13',badgeT:'#F0997B',
+    desc:'2026-04 ARR $30B，Series H文件顯示約$47B（與v0.4估計$44B+方向一致）。Series H 估值 $965B，融資 $65B。S-1 官方確認提交：2026-06-01。❌ 毛利率完全未披露——交叉驗證確認為產業普遍現象（同業中僅Cohere披露70%，OpenAI僅第三方估算~33%，Mistral/xAI/Anthropic均不揭露），非Anthropic特例。Q2 2026 SpaceX ramp-up折扣帶來一次性利潤$559M，非持續性。',
+    metrics:[
+      {k:'① 2025年度GAAP收入',v:'$4.5B',q:'📊'},{k:'② 累計歷史收入（2023起）',v:'>$5B',q:'✅'},
+      {k:'③ ARR（2026-03月末×12）',v:'$19B',q:'⚠️'},{k:'① vs ③：口徑不同，非矛盾',v:'已釐清',q:'⚠️'},
+      {k:'Q1 2026 實際季度收入',v:'$4.8B',q:'📊'},{k:'Q2 2026 預估收入',v:'$10.9B',q:'📊'},
+      {k:'ARR（2026-04）',v:'$30B',q:'⚠️'},{k:'ARR（Series H文件，2026-06前後）',v:'~$47B（gross basis）',q:'⚠️'},
+      {k:'Series H 估值',v:'$965B',q:'⚠️'},{k:'Series H 融資',v:'$65B',q:'⚠️'},
+      {k:'累計融資',v:'~$125B',q:'📊'},{k:'Q2 一次性利潤',v:'$559M（非持續）',q:'📊'},
+      {k:'S-1提交確認',v:'2026-06-01',q:'⚠️'},
+      {k:'毛利率',v:'❌ 完全未披露（產業普遍現象，非特例）',q:'❌'},
+      {k:'同業披露對比',v:'Cohere✅70% / OpenAI📊估33% / Anthropic❌無',q:'⚠️'}
+    ],
+    out:['→ Claude API 銷售給企業/開發者','→ Claude.ai 直面終端用戶','→ 授權給 Bedrock/Vertex'],
+    ins:['← AWS/GCP 算力租用','← SpaceX Colossus-2（月費 $1.25B，Q2享ramp-up折扣）','← Series H 融資 $65B','← ARR以gross basis計，含合作夥伴分潤，不可與OpenAI net basis直接比']},
+  cm:{id:'cm',label:'雲端自有模型',sub:'Gemini·Phi·Nova',layer:'l2h',col:2,row:2,
+    spend_total:60, spend_Q:'📊', revenue_total:25, revenue_Q:'📊',
+    badge:'#0C447C',badgeT:'#85B7EB',
+    desc:'Google Gemini、Microsoft Phi、Amazon Nova。使用自有算力，無外部採購成本，直接競爭 OpenAI/Anthropic 的應用層市場。',
+    metrics:[
+      {k:'算力成本（估）',v:'$50–70B',q:'📊'},{k:'AI 服務收入（估）',v:'$20–30B',q:'📊'},
+      {k:'Gemini 2.5 基準',v:'競爭力達到',q:'⚠️'}
+    ],
+    out:['→ API 服務供應給 SaaS/開發者/企業'],
+    ins:['← Hyperscaler 自有算力（內部成本）','← 應用層 API 費用']},
+  oracle:{id:'oracle',label:'Oracle OCI',sub:'Layer 1 供應方',layer:'l1',col:1,row:3,
+    spend_total:56, spend_Q:'✅', revenue_total:18, revenue_Q:'✅',
+    badge:'#3C3489',badgeT:'#AFA9EC',
+    desc:'從企業軟體轉型的AI基礎設施供應商。FY2026 OCI收入$18.1B（+77% YoY），CapEx $55.663B（+162% YoY）。財年截至5月，與其他Hyperscaler口徑不同，獨立追蹤。主要客戶：OpenAI、xAI、Stargate項目。',
+    metrics:[
+      {k:'OCI收入 FY2026全年',v:'$18.1B',q:'✅'},{k:'OCI YoY',v:'+77%',q:'✅'},
+      {k:'OCI Q1 FY2026',v:'$3.3B（+55%）',q:'✅'},{k:'OCI Q4 FY2026',v:'$5.8B（+93%）',q:'✅'},
+      {k:'Total Cloud FY2026',v:'$34.0B（+39%）',q:'✅'},
+      {k:'CapEx FY2026（現金流量表）',v:'$55.663B',q:'✅'},{k:'CapEx YoY',v:'+162%',q:'✅'},
+      {k:'CapEx FY2025',v:'$21.24B',q:'✅'},{k:'CapEx淨支出口徑',v:'~$48B',q:'⚠️'},
+      {k:'全球雲端市占',v:'~3%',q:'📊'},{k:'財年口徑',v:'FY截至5月，獨立追蹤',q:'✅'},
+      {k:'OpenAI合約（承諾）',v:'~$300B（多年，非已實現）',q:'📊'}
+    ],
+    out:['→ OCI GPU算力租用給OpenAI、xAI、企業客戶','→ Stargate項目基礎設施供應'],
+    ins:['← NVIDIA GPU採購（算力來源）','← 客戶預付款（含在CapEx淨支出差距）']},
+  cr:{id:'cr',label:'雲端轉售',sub:'Bedrock·Vertex·Azure',layer:'l2h',col:2,row:3,
+    spend_total:22, spend_Q:'📊', revenue_total:8, revenue_Q:'📊',
+    badge:'#0C447C',badgeT:'#85B7EB',
+    desc:'Azure OpenAI Service、AWS Bedrock、GCP Vertex AI。企業偏好此渠道主要因合規需求。Hyperscaler 同時是 OpenAI/Anthropic 最大分銷渠道和競爭對手。',
+    metrics:[
+      {k:'轉售 API 收入（估）',v:'$6–10B',q:'📊'},{k:'授權費+算力成本',v:'~$20–25B',q:'📊'}
+    ],
+    out:['→ 轉售 API 給大型企業客戶'],
+    ins:['← OpenAI/Anthropic API 授權','← 算力成本（內部）','← 企業訂閱/用量費']},
+  l3:{id:'l3',label:'應用層',sub:'SaaS·開發者·企業',layer:'l3',col:3,row:0,
+    spend_total:50, spend_Q:'📊', revenue_total:null, revenue_Q:'❌',
+    badge:'#633806',badgeT:'#EF9F27',
+    desc:'SaaS 公司、獨立開發者、企業內部 IT。AI 收入目前多數不單獨披露，是四層中數據最不透明的位置。⚠️ 物理 AI 子層（v0.5標記）：自動駕駛、人形機器人、藥物發現等應用算力需求結構（邊緣推論為主）與軟體 AI 不同，目前不獨立追蹤，待規模化後評估。物理 AI 規模化將使 DEMAND-b 代理指標系統性低估真實需求。',
+    metrics:[
+      {k:'API 採購支出（估）',v:'$40–60B',q:'📊'},{k:'AI 應用層收入',v:'❌ 無彙整數據',q:'❌'},
+      {k:'ChatGPT 訂閱',v:'$20/月',q:'⚠️'},{k:'Claude Pro 訂閱',v:'$20/月',q:'⚠️'},
+      {k:'物理AI子層（質性）',v:'自動駕駛/機器人/藥物發現，算力結構不同',q:'⚠️'},
+      {k:'物理AI納入條件',v:'年收入>$5B上市公司，或NVIDIA單獨披露相關平台收入',q:'⬜'},
+      {k:'Salesforce營益率',v:'GAAP 21.1% / 非GAAP 34.8%（FY27 Q1）',q:'✅'},
+      {k:'ServiceNow訂閱毛利率',v:'GAAP 77.5% / 非GAAP 81.5%（2026 Q1）',q:'✅'},
+      {k:'Salesforce Agentforce+Data360 ARR',v:'$1.4B（+114% YoY）',q:'⚠️'},
+      {k:'ServiceNow AI大型交易',v:'16筆>$5M，YoY+80%',q:'⚠️'},
+      {k:'AI功能毛利率缺口',v:'❌ 未單獨披露，含在整體訂閱毛利率',q:'❌'}
+    ],
+    out:['→ AI 服務/功能交付終端用戶'],
+    ins:['← 向 OpenAI/Anthropic/雲端購買 API','← 終端用戶訂閱費 + 企業合約']},
+};
+
+// ─────────────────────────────────────────────
+// SANKEY LAYOUT
+// ─────────────────────────────────────────────
+const W=760,H=800,PL=10,PR=68,PT=36,PB=58;
+const NW=116; // node width
+const cols = [PL+8, PL+(W-PL-PR)*0.27, PL+(W-PL-PR)*0.55, PL+(W-PL-PR)*0.83];
+
+// assign y positions per column
+const COL_NODES = [[NODES.pow,NODES.tsc,NODES.eq],[NODES.nv,NODES.amd,NODES.hyp],[NODES.oai,NODES.ant,NODES.cm,NODES.cr],[NODES.l3]];
+const NH = {pow:52,tsc:52,eq:52,nv:52,amd:52,hyp:62,oai:88,ant:88,cm:76,cr:76,l3:62};
+const GAP = 22;
+
+function layoutCols(){
+  COL_NODES.forEach((col,ci)=>{
+    const totalH = col.reduce((s,n)=>s+NH[n.id],0)+(col.length-1)*GAP;
+    let y = PT+(H-PT-PB-totalH)/2;
+    col.forEach(n=>{n.x=cols[ci];n.y=y;n.h=NH[n.id];y+=n.h+GAP;});
+  });
+}
+layoutCols();
+
+// flow width scale: max flow gets 28px, min gets 3px
+let showRevenue = false; // false=spend, true=revenue
+function flowVal(f){ return showRevenue ? f.revenue : f.spend; }
+function flowQ(f){ return showRevenue ? f.revenueQ : f.spendQ; }
+
+// 品質分級樣式映射：證據強度直接驅動視覺呈現，而非僅停留在 tooltip 文字
+// ✅ SEC確認 → 實線、標準不透明度（最高確定性）
+// ⚠️ 官方聲明 → 實線、略降不透明度（公司自述，非審計）
+// 📊 估計值 → 虛線（中疏密度）（第三方推算）
+// 🔗 代理指標 → 虛線（細疏密度，更碎）（間接推算，確定性最低）
+const QUALITY_STYLE = {
+  '✅': { dash: null,  opacity: 0.85, label: 'SEC確認' },
+  '⚠️': { dash: null,  opacity: 0.60, label: '官方聲明' },
+  '📊': { dash: '7 4', opacity: 0.55, label: '估計值' },
+  '🔗': { dash: '3 3', opacity: 0.45, label: '代理指標' },
+};
+function qStyle(q){ return QUALITY_STYLE[q] || QUALITY_STYLE['📊']; }
+
+function maxFlowVal(){return Math.max(...FLOWS.map(f=>flowVal(f)||0));}
+
+function scaleW(v){
+  const mx=maxFlowVal();
+  // log scale for better visual range
+  if(!v||v<=0) return 2;
+  const logV=Math.log(v+1), logMx=Math.log(mx+1);
+  return Math.max(2, Math.round((logV/logMx)*18));
+}
+
+// port tracking: how much vertical space used at each node's output/input
+let sPorts={},tPorts={};
+
+function initPorts(){
+  sPorts={};tPorts={};
+  Object.keys(NODES).forEach(id=>{sPorts[id]=0;tPorts[id]=0;});
+}
+
+function mkPath(f,sw){
+  const s=NODES[f.s],t=NODES[f.t];
+  if(!s||!t) return null;
+  const x1=s.x+NW, x2=t.x;
+  const y1=s.y+14+sPorts[f.s], y2=t.y+14+tPorts[f.t];
+  sPorts[f.s]+=(sw+4);
+  tPorts[f.t]+=(sw+4);
+  const mx=(x1+x2)/2;
+  // arrow tip: triangle pointing right at target end
+  const tip=Math.min(sw*0.9,14);
+  const mid=(y2+y2+sw)/2;
+  // ribbon body (stops before tip)
+  const body=`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}
+              L${x2},${y2+sw} C${mx},${y2+sw} ${mx},${y1+sw} ${x1},${y1+sw} Z`;
+  // arrow head at target
+  const arrow=`M${x2},${y2-tip/2} L${x2+tip},${mid} L${x2},${y2+sw+tip/2} Z`;
+  return {body,arrow,midX:mx,midY:(y1+y2)/2+sw/2};
+}
+
+// active node
+let activeNode=null;
+// dim mode active
+let dimMode=false;
+
+function renderSankey(){
+  initPorts();
+  const svg=document.getElementById('sk');
+  svg.innerHTML='';
+
+  // defs
+  const defs=mkEl('defs');
+  const marker=(id,color)=>{
+    const m=mkEl('marker'); m.setAttribute('id',id); m.setAttribute('viewBox','0 0 10 10');
+    m.setAttribute('refX','8');m.setAttribute('refY','5');m.setAttribute('markerWidth','5');m.setAttribute('markerHeight','5');m.setAttribute('orient','auto-start-reverse');
+    const p=mkEl('path'); p.setAttribute('d','M2 1L8 5L2 9'); p.setAttribute('fill','none'); p.setAttribute('stroke',color); p.setAttribute('stroke-width','1.8'); p.setAttribute('stroke-linecap','round'); p.setAttribute('stroke-linejoin','round');
+    m.appendChild(p); return m;
+  };
+  defs.appendChild(marker('ar','#5a5856'));
+  defs.appendChild(marker('ar-money','#888780'));
+  svg.appendChild(defs);
+
+  // layer bands
+  const bands=[
+    {y:PT-8,h:COL_NODES[0].reduce((s,n)=>s+n.h,0)+(COL_NODES[0].length-1)*GAP+16,fill:'#1D9E75',label:'L0'},
+    {y:NODES.nv.y-8,h:COL_NODES[1].reduce((s,n)=>s+n.h,0)+(COL_NODES[1].length-1)*GAP+16,fill:'#534AB7',label:'L1'},
+    {y:NODES.oai.y-8,h:COL_NODES[2].reduce((s,n)=>s+n.h,0)+(COL_NODES[2].length-1)*GAP+16,fill:'#993C1D',label:'L2'},
+    {y:NODES.l3.y-8,h:NODES.l3.h+16,fill:'#854F0B',label:'L3'},
+  ];
+  bands.forEach(b=>{
+    const r=mkEl('rect'); r.setAttribute('x','0'); r.setAttribute('y',b.y); r.setAttribute('width',W); r.setAttribute('height',b.h); r.setAttribute('fill',b.fill); r.setAttribute('fill-opacity','.04'); svg.appendChild(r);
+    const t=mkEl('text'); t.setAttribute('x','6'); t.setAttribute('y',b.y+b.h/2); t.setAttribute('dominant-baseline','central'); t.setAttribute('font-size','10'); t.setAttribute('font-weight','600'); t.setAttribute('fill',b.fill); t.setAttribute('fill-opacity','.7'); t.setAttribute('font-family','var(--font)'); t.textContent=b.label; svg.appendChild(t);
+  });
+
+  // flows: filled ribbon + arrowhead tip at target
+  // 視覺品質分級：證據強度（flowQ）直接決定虛實線樣式與不透明度，不再僅靠金額縮放寬度
+  const flowEls={};
+  FLOWS.forEach(f=>{
+    const n=NODES[f.s],t2=NODES[f.t];
+    if(!n||!t2) return;
+    const v=flowVal(f)||0;
+    const q=flowQ(f);
+    const qs=qStyle(q);
+    const sw=scaleW(v);
+    const geo=mkPath(f,sw);
+    if(!geo) return;
+
+    const fillColor=getNodeColor(f.s,qs.opacity*0.65);
+    const strokeColor=getNodeColor(f.s,qs.opacity+0.15>1?1:qs.opacity+0.15);
+
+    if(f.dashed){
+      // licensing flows: thin stroked curve, dash pattern still reflects quality on top of licensing-dash semantics
+      const el=mkEl('path');
+      el.setAttribute('d',`M${NODES[f.s].x+NW},${NODES[f.s].y+NODES[f.s].h/2} C${(NODES[f.s].x+NW+NODES[f.t].x)/2},${NODES[f.s].y+NODES[f.s].h/2} ${(NODES[f.s].x+NW+NODES[f.t].x)/2},${NODES[f.t].y+NODES[f.t].h/2} ${NODES[f.t].x},${NODES[f.t].y+NODES[f.t].h/2}`);
+      el.setAttribute('fill','none');
+      el.setAttribute('stroke',strokeColor);
+      el.setAttribute('stroke-width','2');
+      el.setAttribute('stroke-dasharray', qs.dash || '5 4');
+      el.setAttribute('data-flow',f.id);
+      el.setAttribute('data-quality',q);
+      el.style.cursor='pointer';
+      el.addEventListener('mousemove',ev=>showTT(ev,f,sw));
+      el.addEventListener('mouseleave',hideTT);
+      svg.appendChild(el);
+      flowEls[f.id]=el;
+    } else {
+      // ribbon body：✅/⚠️ 維持實心填色；📊/🔗 改為虛線外框 + 降低填色不透明度，一眼可辨識證據強度
+      const body=mkEl('path');
+      body.setAttribute('d',geo.body);
+      body.setAttribute('data-flow',f.id);
+      body.setAttribute('data-quality',q);
+      body.style.cursor='pointer';
+      if(qs.dash){
+        // 估計值／代理指標：填色更淡，邊框改虛線，讓使用者一眼辨識「這條流不是確認數字」
+        body.setAttribute('fill',getNodeColor(f.s,0.18));
+        body.setAttribute('stroke',strokeColor);
+        body.setAttribute('stroke-width','1.2');
+        body.setAttribute('stroke-dasharray',qs.dash);
+      } else {
+        body.setAttribute('fill',fillColor);
+        body.setAttribute('stroke',strokeColor);
+        body.setAttribute('stroke-width','0.5');
+      }
+      body.addEventListener('mousemove',ev=>showTT(ev,f,sw));
+      body.addEventListener('mouseleave',hideTT);
+      svg.appendChild(body);
+      flowEls[f.id]=body;
+
+      // arrow tip：估計值/代理指標箭頭也降低不透明度，呼應流線本身的不確定性
+      const tip=mkEl('path');
+      tip.setAttribute('d',geo.arrow);
+      tip.setAttribute('fill',strokeColor);
+      tip.setAttribute('fill-opacity', qs.dash ? '0.6' : '1');
+      tip.setAttribute('stroke','none');
+      tip.setAttribute('pointer-events','none');
+      svg.appendChild(tip);
+    }
+
+    // amount label above midpoint
+    // 精度誠實化：✅/⚠️ 維持精確數字；📊/🔗 一律加「~」前綴，避免表面精度高於實際精度
+    const lbl=mkEl('text');
+    lbl.setAttribute('x',geo.midX);
+    lbl.setAttribute('y',geo.midY - sw/2 - 5);
+    lbl.setAttribute('text-anchor','middle');
+    lbl.setAttribute('dominant-baseline','auto');
+    lbl.setAttribute('font-size','10');
+    lbl.setAttribute('font-weight','500');
+    lbl.setAttribute('fill',getNodeStroke(f.s));
+    lbl.setAttribute('fill-opacity', qs.dash ? '0.65' : '0.9');
+    lbl.setAttribute('font-family','var(--font)');
+    lbl.setAttribute('pointer-events','none');
+    lbl.setAttribute('data-flow-label',f.id);
+    const precisionPrefix = qs.dash ? '~' : '';
+    lbl.textContent=`${precisionPrefix}$${v}B`;
+    svg.appendChild(lbl);
+  });
+
+  // money return arrow
+  const moneyX=W-PR+10;
+  const moneyPath=`M${moneyX},${NODES.l3.y+NODES.l3.h/2} C${moneyX+32},${NODES.l3.y+NODES.l3.h/2} ${moneyX+32},${PT+40} ${moneyX},${PT+40}`;
+  const mp=mkEl('path'); mp.setAttribute('d',moneyPath); mp.setAttribute('fill','none'); mp.setAttribute('stroke','#5a5856'); mp.setAttribute('stroke-width','1.5'); mp.setAttribute('stroke-dasharray','4 5'); mp.setAttribute('marker-end','url(#ar-money)'); mp.setAttribute('opacity','.45'); svg.appendChild(mp);
+  const mt=mkEl('text'); mt.setAttribute('x',moneyX+50); mt.setAttribute('y',H/2); mt.setAttribute('text-anchor','middle'); mt.setAttribute('font-size','9'); mt.setAttribute('fill','#5a5856'); mt.setAttribute('fill-opacity','.55'); mt.setAttribute('font-family','var(--font)'); mt.setAttribute('transform',`rotate(90 ${moneyX+50} ${H/2})`); mt.textContent='資金回流'; svg.appendChild(mt);
+
+  // nodes
+  Object.values(NODES).forEach(n=>{
+    const g=mkEl('g'); g.style.cursor='pointer';
+    g.setAttribute('data-node',n.id);
+    const rect=mkEl('rect');
+    rect.setAttribute('x',n.x); rect.setAttribute('y',n.y); rect.setAttribute('width',NW); rect.setAttribute('height',n.h); rect.setAttribute('rx','7');
+    rect.setAttribute('fill',getNodeColor(n.id,0.18)); rect.setAttribute('stroke',getNodeStroke(n.id)); rect.setAttribute('stroke-width',activeNode===n.id?'1.8':'0.7');
+    // 節點外框品質分級：該節點主要數字（spend/revenue視角）若為📊/🔗，外框改虛線，與流線品質系統一致
+    const nodeQ = showRevenue ? n.revenue_Q : n.spend_Q;
+    const nodeQs = qStyle(nodeQ);
+    if(nodeQs.dash && activeNode!==n.id){ rect.setAttribute('stroke-dasharray', nodeQs.dash); }
+    g.appendChild(rect);
+    const lines=n.label.includes('·')||n.label.length>7 ? [n.label,n.sub] : [n.label,n.sub];
+    const t1=mkEl('text'); t1.setAttribute('x',n.x+NW/2); t1.setAttribute('y',n.y+n.h/2-8); t1.setAttribute('text-anchor','middle'); t1.setAttribute('dominant-baseline','central'); t1.setAttribute('font-size','12'); t1.setAttribute('font-weight','500'); t1.setAttribute('fill',n.badgeT); t1.setAttribute('font-family','var(--font)'); t1.textContent=n.label; g.appendChild(t1);
+    const t2e=mkEl('text'); t2e.setAttribute('x',n.x+NW/2); t2e.setAttribute('y',n.y+n.h/2+8); t2e.setAttribute('text-anchor','middle'); t2e.setAttribute('dominant-baseline','central'); t2e.setAttribute('font-size','9'); t2e.setAttribute('fill',n.badge); t2e.setAttribute('font-family','var(--font)'); t2e.textContent=n.sub; g.appendChild(t2e);
+    // amount labels below node
+    const vv = showRevenue ? n.revenue_total : n.spend_total;
+    const qq = showRevenue ? n.revenue_Q : n.spend_Q;
+    if(vv){
+      const tv=mkEl('text'); tv.setAttribute('x',n.x+NW/2); tv.setAttribute('y',n.y+n.h+11); tv.setAttribute('text-anchor','middle'); tv.setAttribute('dominant-baseline','central'); tv.setAttribute('font-size','10'); tv.setAttribute('fill',n.badgeT); tv.setAttribute('fill-opacity','.85'); tv.setAttribute('font-family','var(--font)'); tv.textContent=`$${vv}B ${qq}`; g.appendChild(tv);
+    }
+    g.addEventListener('click',()=>selectNode(n.id));
+    g.addEventListener('mouseover',()=>{ if(!activeNode){ g.querySelector('rect').setAttribute('fill',getNodeColor(n.id,0.28)); }});
+    g.addEventListener('mouseout',()=>{ if(!activeNode){ g.querySelector('rect').setAttribute('fill',getNodeColor(n.id,0.18)); }});
+    svg.appendChild(g);
+  });
+
+  // legend：第一排為流向類型，第二排為證據強度分級（虛實線系統說明）
+  const lgY=H-28;
+  const lgY2=H-14;
+  const lg=[
+    {x:PL+8,line:true,dash:false,color:'#5a5856',label:'服務/商品流（寬度=金額）'},
+    {x:PL+180,line:true,dash:true,color:'#D85A30',label:'授權合作'},
+    {x:PL+295,line:true,dash:false,color:'#5a5856',label:'資金回流',rev:true},
+  ];
+  lg.forEach(i=>{
+    const l=mkEl('line'); l.setAttribute('x1',i.x); l.setAttribute('y1',lgY); l.setAttribute('x2',i.x+30); l.setAttribute('y2',lgY); l.setAttribute('stroke',i.color); l.setAttribute('stroke-width','1.5'); if(i.dash) l.setAttribute('stroke-dasharray','4 3'); svg.appendChild(l);
+    const t=mkEl('text'); t.setAttribute('x',i.x+34); t.setAttribute('y',lgY); t.setAttribute('dominant-baseline','central'); t.setAttribute('font-size','9'); t.setAttribute('fill','#5a5856'); t.setAttribute('font-family','var(--font)'); t.textContent=i.label; svg.appendChild(t);
+  });
+
+  // 證據強度圖例：四級品質標記對應的線條樣式，讓使用者知道虛實線代表可信度而非裝飾
+  const qLegend = [
+    {q:'✅', x: PL+8},
+    {q:'⚠️', x: PL+85},
+    {q:'📊', x: PL+162},
+    {q:'🔗', x: PL+239},
+  ];
+  qLegend.forEach(i=>{
+    const qs = qStyle(i.q);
+    const l=mkEl('line'); l.setAttribute('x1',i.x); l.setAttribute('y1',lgY2); l.setAttribute('x2',i.x+22); l.setAttribute('y2',lgY2);
+    l.setAttribute('stroke','#5a5856'); l.setAttribute('stroke-width','2'); l.setAttribute('stroke-opacity',qs.opacity);
+    if(qs.dash) l.setAttribute('stroke-dasharray',qs.dash);
+    svg.appendChild(l);
+    const t=mkEl('text'); t.setAttribute('x',i.x+26); t.setAttribute('y',lgY2); t.setAttribute('dominant-baseline','central');
+    t.setAttribute('font-size','9'); t.setAttribute('fill','#5a5856'); t.setAttribute('font-family','var(--font)');
+    t.textContent=`${i.q} ${qs.label}`; svg.appendChild(t);
+  });
+
+  // apply dim if node active
+  if(activeNode) applyDim(activeNode, flowEls);
+}
+
+function getNodeColor(id,alpha){
+  const n=NODES[id]; if(!n) return `rgba(100,100,100,${alpha})`;
+  const layerColor={l0:'29,158,117',l1:'83,74,183',l2:'153,60,29',l2h:'24,95,165',l3:'133,79,11'};
+  const c=layerColor[n.layer]||'100,100,100';
+  return `rgba(${c},${alpha})`;
+}
+function getNodeStroke(id){
+  const n=NODES[id]; if(!n) return '#888';
+  const lc={l0:'#1D9E75',l1:'#534AB7',l2:'#993C1D',l2h:'#378ADD',l3:'#854F0B'};
+  return lc[n.layer]||'#888';
+}
+
+function mkEl(tag){ return document.createElementNS('http://www.w3.org/2000/svg',tag); }
+
+function applyDim(nid, flowEls){
+  const relFlows = FLOWS.filter(f=>f.s===nid||f.t===nid).map(f=>f.id);
+  Object.entries(flowEls).forEach(([fid,el])=>{
+    el.style.opacity = relFlows.includes(fid) ? '1' : '0.05';
+  });
+  document.querySelectorAll('[data-flow-label]').forEach(lbl=>{
+    const fid=lbl.getAttribute('data-flow-label');
+    lbl.setAttribute('fill-opacity', relFlows.includes(fid) ? '0.9' : '0.05');
+  });
+  document.querySelectorAll('[data-node]').forEach(g=>{
+    const id=g.getAttribute('data-node');
+    const relNodes=new Set([nid]);
+    FLOWS.forEach(f=>{if(f.s===nid) relNodes.add(f.t); if(f.t===nid) relNodes.add(f.s);});
+    g.style.opacity=relNodes.has(id)?'1':'0.25';
+  });
+}
+
+function selectNode(id){
+  if(activeNode===id){ activeNode=null; renderSankey(); showPanel(null); return; }
+  activeNode=id;
+  renderSankey();
+  showPanel(id);
+}
+
+function showPanel(id){
+  const empty=document.getElementById('sk-empty');
+  const detail=document.getElementById('sk-detail');
+  if(!id){ empty.style.display='flex'; detail.style.display='none'; return; }
+  const n=NODES[id]; if(!n) return;
+  empty.style.display='none'; detail.style.display='block';
+  const qcls={'✅':'qc','⚠️':'qo','📊':'qe','❌':'qg','🔗':'qp'};
+  let h=`<div class="pd-badge" style="background:${n.badge}30;color:${n.badgeT}">${n.layer==='l2h'?'Layer 2 雲端':'Layer '+(['l0','l1','l2','l3'].indexOf(n.layer))+' '+['基礎設施','算力','模型','應用'][['l0','l1','l2','l3'].indexOf(n.layer)]}</div>`;
+  h+=`<div class="pd-name">${n.label}</div>`;
+  h+=`<div class="pd-desc">${n.desc}</div>`;
+  h+=`<div class="pd-stitle">關鍵數字</div>`;
+  n.metrics.forEach(m=>{
+    h+=`<div class="pd-kv"><span class="pd-k">${m.k}</span><span class="pd-v">${m.v} <span class="pd-q qs ${qcls[m.q]||''}">${m.q}</span></span></div>`;
+  });
+  // flow summary
+  const outFlows=FLOWS.filter(f=>f.s===id);
+  const inFlows=FLOWS.filter(f=>f.t===id);
+  if(outFlows.length){
+    h+=`<div class="pd-stitle">${showRevenue?'收入來源':'支出方向'}</div>`;
+    outFlows.forEach(f=>{
+      const v=flowVal(f); const q=flowQ(f);
+      h+=`<div class="pd-rel"><span class="pd-arrow" style="color:var(--tealT)">→</span><span>${NODES[f.t]?.label||f.t}：<b style="color:var(--text);font-family:var(--mono)">$${v}B</b> <span class="qs ${qcls[q]||''}">${q}</span></span></div>`;
+    });
+  }
+  if(inFlows.length){
+    h+=`<div class="pd-stitle">${showRevenue?'支出方向':'收入來源'}</div>`;
+    inFlows.forEach(f=>{
+      const v=flowVal(f); const q=flowQ(f);
+      h+=`<div class="pd-rel"><span class="pd-arrow" style="color:var(--purpleT)">←</span><span>${NODES[f.s]?.label||f.s}：<b style="color:var(--text);font-family:var(--mono)">$${v}B</b> <span class="qs ${qcls[q]||''}">${q}</span></span></div>`;
+    });
+  }
+  // ratio
+  const spend=n.spend_total, rev=n.revenue_total;
+  if(spend&&rev){
+    const ratio=(rev/spend).toFixed(2);
+    const color=parseFloat(ratio)>=1?'var(--tealT)':'var(--coralT)';
+    h+=`<div class="pd-stitle">收支比值</div>`;
+    h+=`<div class="pd-kv"><span class="pd-k">支出</span><span class="pd-v">$${spend}B <span class="qs ${qcls[n.spend_Q]||''}">${n.spend_Q}</span></span></div>`;
+    h+=`<div class="pd-kv"><span class="pd-k">收入</span><span class="pd-v">$${rev}B <span class="qs ${qcls[n.revenue_Q]||''}">${n.revenue_Q}</span></span></div>`;
+    h+=`<div class="pd-kv"><span class="pd-k">收入 ÷ 支出</span><span class="pd-v" style="color:${color}">${ratio}x</span></div>`;
+    if(parseFloat(ratio)<1) h+=`<div style="font-size:11px;color:var(--coralT);margin-top:6px;line-height:1.5">⚠️ 支出大於收入，依賴外部融資或跨層補貼</div>`;
+  }
+  detail.innerHTML=h;
+}
+
+// TOOLTIP
+function showTT(ev,f,sw){
+  const tt=document.getElementById('tt');
+  const q=flowQ(f); const v=flowVal(f);
+  const qcls={'✅':'qc','⚠️':'qo','📊':'qe','❌':'qg','🔗':'qp'};
+  const qs=qStyle(q);
+  const precisionPrefix = qs.dash ? '~' : '';
+  const precisionNote = qs.dash ? '（估算值，非精確數字）' : '';
+  tt.innerHTML=`<div class="tt-label">${NODES[f.s]?.label||f.s} → ${NODES[f.t]?.label||f.t}</div><div class="tt-row"><span>${f.label}</span><span class="tt-val">${precisionPrefix}$${v}B${precisionNote}</span></div><div class="tt-quality"><span class="qs ${qcls[q]||''}">${q} ${qs.label}</span> ${f.note}</div>`;
+  tt.style.display='block';
+  tt.style.left=(ev.clientX+14)+'px';
+  tt.style.top=(ev.clientY-10)+'px';
+}
+function hideTT(){ document.getElementById('tt').style.display='none'; }
+document.addEventListener('mousemove',ev=>{
+  const tt=document.getElementById('tt');
+  if(tt.style.display==='block'){ tt.style.left=(ev.clientX+14)+'px'; tt.style.top=(ev.clientY-10)+'px'; }
+});
+
+// layer filter
+function filterL(l,btn){
+  document.querySelectorAll('#lp .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  activeNode=null;
+  document.querySelectorAll('[data-node]').forEach(g=>{
+    const n=NODES[g.getAttribute('data-node')];
+    g.style.opacity=(l==='all'||n?.layer===l)?'1':'0.15';
+  });
+  document.querySelectorAll('[data-flow]').forEach(el=>{
+    const f=FLOWS.find(fl=>fl.id===el.getAttribute('data-flow'));
+    el.style.opacity=(l==='all'||f?.layer===l)?'1':'0.04';
+  });
+  document.querySelectorAll('[data-flow-label]').forEach(lbl=>{
+    const f=FLOWS.find(fl=>fl.id===lbl.getAttribute('data-flow-label'));
+    lbl.setAttribute('fill-opacity',(l==='all'||f?.layer===l)?'0.9':'0.04');
+  });
+  showPanel(null);
+}
+
+// toggle spend/revenue
+function toggleMode(btn){
+  showRevenue=!showRevenue;
+  btn.textContent=showRevenue?'📈 收入視角':'💰 支出視角';
+  renderSankey();
+  if(activeNode) showPanel(activeNode);
+}
+
+// ─────────────────────────────────────────────
+// DATA TABLE
+// ─────────────────────────────────────────────
+const TDATA=[
+  {l:'l0',co:'台積電',m:'合併營收',v:'$122.4B',p:'2025全年',q:'✅',src:'TSMC 2025年報'},
+  {l:'l0',co:'台積電',m:'毛利率',v:'59.9%',p:'2025全年',q:'✅',src:'TSMC 2025年報'},
+  {l:'l0',co:'台積電',m:'YoY',v:'+35.9%',p:'2025全年',q:'✅',src:'TSMC 2025年報'},
+  {l:'l0',co:'台積電',m:'AI加速器佔比',v:'~15–19%',p:'2025全年',q:'⚠️',src:'Q4法說會'},
+  {l:'l0',co:'台積電',m:'Q1 2026 營收',v:'$35.71B',p:'2026 Q1',q:'⚠️',src:'台灣證交所'},
+  {l:'l0',co:'台積電',m:'2026 CapEx指引',v:'$52–56B',p:'2026全年',q:'⚠️',src:'官方指引'},
+  {l:'l0',co:'Vertiv',m:'全年淨銷售額',v:'$10.2B',p:'2025全年',q:'✅',src:'10-K 2026-02-13'},
+  {l:'l0',co:'Vertiv',m:'YoY',v:'+28%',p:'2025全年',q:'✅',src:'10-K 2026-02-13'},
+  {l:'l0',co:'Vertiv',m:'調整後營業利益率',v:'20.4%',p:'2025全年',q:'✅',src:'10-K 2026-02-13'},
+  {l:'l0',co:'Vertiv',m:'訂單積壓backlog',v:'$15.0B',p:'2025年底',q:'✅',src:'10-K 2026-02-13'},
+  {l:'l0',co:'Vertiv',m:'2026全年指引',v:'$13.25–13.75B',p:'2026全年',q:'⚠️',src:'Q4法說會'},
+  {l:'l0',co:'Arista',m:'全年營收',v:'$9B',p:'2025全年',q:'✅',src:'Q4 2025財報'},
+  {l:'l0',co:'Arista',m:'Q4 YoY',v:'+28.9%',p:'2025 Q4',q:'✅',src:'Q4 2025財報'},
+  {l:'l1',co:'NVIDIA',m:'FY2026 總營收',v:'$215.9B',p:'FY2026',q:'✅',src:'FY2026 8-K'},
+  {l:'l1',co:'NVIDIA',m:'YoY',v:'+65%',p:'FY2026',q:'✅',src:'FY2026 8-K'},
+  {l:'l1',co:'NVIDIA',m:'GAAP毛利率',v:'71.1%',p:'FY2026全年',q:'✅',src:'FY2026 8-K'},
+  {l:'l1',co:'NVIDIA',m:'Q4 資料中心營收',v:'$62.3B',p:'Q4 FY2026',q:'✅',src:'FY2026 8-K'},
+  {l:'l1',co:'NVIDIA',m:'H20出口管制損失',v:'-$4.5B',p:'Q1 FY2027',q:'✅',src:'Q1 8-K'},
+  {l:'l1',co:'NVIDIA',m:'Q1 FY2027毛利率',v:'60.5%',p:'Q1 FY2027',q:'✅',src:'Q1 8-K'},
+  {l:'l1',co:'AMD',m:'資料中心分部營收',v:'$16.6B',p:'2025全年',q:'✅',src:'10-K/A 2026-02-04'},
+  {l:'l1',co:'AMD',m:'資料中心YoY',v:'+32%',p:'2025全年',q:'✅',src:'10-K/A'},
+  {l:'l1',co:'AMD',m:'全公司GAAP毛利率',v:'50%',p:'2025全年',q:'✅',src:'10-K/A'},
+  {l:'l1',co:'AMD',m:'分部營業利益率',v:'~21.7%',p:'2025全年',q:'🔗',src:'$3.6B÷$16.6B推算'},
+  {l:'l1',co:'Hyperscaler公司',m:'Q3 2025 CapEx合計',v:'$113.4B',p:'2025 Q3',q:'✅',src:'各公司Earnings'},
+  {l:'l1',co:'Hyperscaler公司',m:'Q3 2025 CapEx YoY',v:'+103%（基準$55.83B）',p:'2025 Q3 vs 2024 Q3',q:'✅/⚠️',src:'各公司10-Q計算'},
+  {l:'l1',co:'Hyperscaler公司',m:'Q4 2025 CapEx合計',v:'$127.0B',p:'2025 Q4',q:'✅',src:'各公司Earnings'},
+  {l:'l1',co:'Hyperscaler公司',m:'Q4 2025 CapEx YoY',v:'+72.4%（基準$73.655B，全部✅）',p:'2025 Q4 vs 2024 Q4',q:'✅',src:'各公司10-Q計算'},
+  {l:'l1',co:'Hyperscaler公司',m:'Q1 2026 CapEx合計',v:'$130.6B',p:'2026 Q1',q:'✅',src:'各公司10-Q'},
+  {l:'l1',co:'Hyperscaler公司',m:'Q1 2026 CapEx YoY',v:'+86%（基準$70.2B）',p:'2026 Q1 vs 2025 Q1',q:'✅',src:'各公司10-Q計算'},
+  {l:'l1',co:'Hyperscaler公司',m:'DEMAND-a比值序列',v:'0.26→0.47→0.50',p:'Q3 2025–2026 Q1',q:'✅/📊',src:'comparison_v0_1計算'},
+  {l:'l1',co:'Oracle OCI',m:'OCI收入 FY2026全年',v:'$18.1B',p:'FY2026（至2026-05）',q:'✅',src:'Oracle FY2026 Earnings'},
+  {l:'l1',co:'Oracle OCI',m:'OCI YoY',v:'+77%',q:'✅',p:'FY2026',src:'同上'},
+  {l:'l1',co:'Oracle OCI',m:'OCI Q4 FY2026',v:'$5.8B（+93% YoY）',q:'✅',p:'2026-03至05',src:'Oracle Q4 FY2026 Earnings'},
+  {l:'l1',co:'Oracle OCI',m:'Total Cloud FY2026',v:'$34.0B（+39%）',q:'✅',p:'FY2026',src:'同上'},
+  {l:'l1',co:'Oracle OCI',m:'CapEx FY2026（現金流量表）',v:'$55.663B',q:'✅',p:'FY2026（至2026-05）',src:'Oracle FY2026 8-K'},
+  {l:'l1',co:'Oracle OCI',m:'CapEx YoY',v:'+162%（vs FY2025 $21.24B）',q:'✅',p:'FY2026 vs FY2025',src:'兩期財報計算'},
+  {l:'l1',co:'Oracle OCI',m:'CapEx淨支出口徑',v:'~$48B',q:'⚠️',p:'FY2026',src:'Oracle法說會'},
+  {l:'l1',co:'Oracle OCI',m:'全球雲端市占',v:'~3%',q:'📊',p:'2025–2026',src:'Synergy Research'},
+  {l:'l1',co:'Oracle OCI',m:'財年口徑說明',v:'FY截至5月，獨立追蹤，不合入Hyperscaler公司合計',q:'✅',p:'—',src:'本框架定義'},
+  {l:'l1',co:'Hyperscaler公司',m:'2026全年CapEx指引',v:'$695–725B',p:'2026全年',q:'⚠️',src:'各公司指引'},
+  {l:'l1',co:'Amazon',m:'Q1 2026 CapEx',v:'$44.2B',p:'2026 Q1',q:'✅',src:'Amazon Q1 10-Q'},
+  {l:'l1',co:'Amazon',m:'Q1 2025 CapEx（MD&A）',v:'$24.3B',p:'2025 Q1',q:'✅',src:'Amazon Q1 2025 10-Q'},
+  {l:'l1',co:'Amazon',m:'Q1 2025 CapEx（現金流量表）',v:'$25.019B',p:'2025 Q1',q:'✅',src:'Amazon Q1 2025 10-Q'},
+  {l:'l1',co:'Amazon',m:'Q1 2026 YoY（精確）',v:'+81.9%（MD&A口徑）',p:'2026 vs 2025',q:'✅',src:'兩期10-Q計算'},
+  {l:'l1',co:'Microsoft',m:'Q3 FY2026 CapEx',v:'$30.9B',p:'Q3 FY2026',q:'✅',src:'MSFT 10-Q'},
+  {l:'l1',co:'Microsoft',m:'Q1 2025 CapEx（確認）',v:'$16.745B',p:'FY2025 Q3（2025-03-31）',q:'✅',src:'MSFT FY2025 Q3 10-Q'},
+  {l:'l1',co:'Microsoft',m:'Q1 2026 YoY（精確）',v:'+84.5%',p:'2026 vs 2025',q:'✅',src:'兩期10-Q計算'},
+  {l:'l1',co:'Alphabet',m:'Q1 2026 CapEx',v:'$35.7B',p:'2026 Q1',q:'✅',src:'Alphabet 10-Q'},
+  {l:'l1',co:'Meta',m:'Q1 2026 CapEx',v:'$19.8B',p:'2026 Q1',q:'✅',src:'Meta 10-Q'},
+  {l:'l2',co:'OpenAI',m:'2025全年收入',v:'$13B',p:'2025全年',q:'📊',src:'The Information'},
+  {l:'l2',co:'OpenAI',m:'ARR',v:'$25B',p:'2026-03',q:'⚠️',src:'OpenAI官方'},
+  {l:'l2',co:'OpenAI',m:'Operating margin',v:'~-122%',p:'2025全年',q:'📊',src:'媒體引述'},
+  {l:'l2',co:'OpenAI',m:'整體毛利率',v:'33%',p:'2025全年',q:'📊',src:'Sacra'},
+  {l:'l2',co:'OpenAI',m:'推論成本',v:'$8.4B/yr',p:'2025全年',q:'📊',src:'媒體引述'},
+  {l:'l2',co:'OpenAI',m:'估值',v:'$852B',p:'2026-03融資',q:'⚠️',src:'融資公告'},
+  {l:'l2',co:'OpenAI',m:'S-1機密提交官方宣布',v:'2026-06-08',p:'2026-06',q:'⚠️',src:'OpenAI公司部落格'},
+  {l:'l2',co:'Anthropic',m:'2025全年GAAP收入',v:'$4.5B',p:'2025全年',q:'📊',src:'The Information'},
+  {l:'l2',co:'Anthropic',m:'累計歷史收入（至2026-03-09）',v:'>$5B',p:'2023商業化起',q:'✅',src:'CFO Krishna Rao法庭宣誓文件'},
+  {l:'l2',co:'Anthropic',m:'S-1機密提交官方確認',v:'2026-06-01',p:'2026-06',q:'⚠️',src:'Anthropic官方公告'},
+  {l:'l2',co:'Anthropic',m:'CFO宣誓：累計收入',v:'>$5B',p:'截至2026-03',q:'✅',src:'法庭宣誓文件'},
+  {l:'l2',co:'Anthropic',m:'Q1 2026實際收入',v:'$4.8B',p:'2026 Q1',q:'📊',src:'CNBC 2026-05-20'},
+  {l:'l2',co:'Anthropic',m:'Q2 2026預估收入',v:'$10.9B',p:'2026 Q2',q:'📊',src:'WSJ/CNBC'},
+  {l:'l2',co:'Anthropic',m:'ARR',v:'$30B',p:'2026-04',q:'⚠️',src:'Anthropic官方'},
+  {l:'l2',co:'Anthropic',m:'ARR估計',v:'$45–47B',p:'2026-05',q:'📊',src:'Sacra/SemiAnalysis'},
+  {l:'l2',co:'Anthropic',m:'Series H估值',v:'$965B',p:'2026-05/06',q:'⚠️',src:'融資公告'},
+  {l:'l2',co:'Anthropic',m:'Series H融資',v:'$65B',p:'2026-05/06',q:'⚠️',src:'融資公告'},
+  {l:'l1',co:'AWS',m:'分部營業利益率',v:'37.7%',p:'2026 Q1',q:'✅',src:'Amazon Q1 2026財報'},
+  {l:'l1',co:'AWS',m:'自研晶片run-rate',v:'>$20B（三位數YoY）',p:'2026 Q1',q:'⚠️',src:'Q1 2026法說會'},
+  {l:'l1',co:'Microsoft',m:'Intelligent Cloud營業利益率',v:'46.3%',p:'Q3 FY2026',q:'✅',src:'MSFT Q3 FY26財報'},
+  {l:'l1',co:'Microsoft',m:'Microsoft Cloud毛利率',v:'66%',p:'Q3 FY2026',q:'✅',src:'MSFT Q3 FY26財報'},
+  {l:'l1',co:'Alphabet',m:'Google Cloud營業利益率',v:'32.9%（YoY+15.1ppt自17.8%）',p:'2026 Q1',q:'✅',src:'Alphabet Q1 2026財報'},
+  {l:'l1',co:'Alphabet',m:'Google Cloud RPO backlog',v:'$460B+（QoQ近翻倍）',p:'2026 Q1',q:'✅',src:'Alphabet Q1 2026財報'},
+  {l:'l3',co:'Salesforce',m:'GAAP營業利益率',v:'21.1%',p:'FY2027 Q1',q:'✅',src:'Salesforce FY27 Q1財報'},
+  {l:'l3',co:'Salesforce',m:'非GAAP營業利益率',v:'34.8%',p:'FY2027 Q1',q:'✅',src:'同上'},
+  {l:'l3',co:'Salesforce',m:'Agentforce+Data360 ARR',v:'$1.4B（+114% YoY）',p:'2025 Q3揭露',q:'⚠️',src:'Salesforce法說會'},
+  {l:'l3',co:'ServiceNow',m:'訂閱毛利率（GAAP）',v:'77.5%',p:'2026 Q1',q:'✅',src:'ServiceNow Q1 2026財報'},
+  {l:'l3',co:'ServiceNow',m:'訂閱毛利率（非GAAP）',v:'81.5%',p:'2026 Q1',q:'✅',src:'同上'},
+  {l:'l3',co:'ServiceNow',m:'非GAAP營業利益率',v:'32%',p:'2026 Q1',q:'✅',src:'同上'},
+  {l:'l3',co:'ServiceNow',m:'AI驅動大型交易',v:'16筆>$5M，YoY+80%',p:'2026 Q1',q:'⚠️',src:'同上'},
+];
+let tblL='all',tblS='',sCol=-1,sDir=1;
+const LC={l0:'tl0',l1:'tl1',l2:'tl2',l2h:'tl2h',l3:'tl3'};
+const LN={l0:'L0基礎',l1:'L1算力',l2:'L2模型',l2h:'L2雲端',l3:'L3應用'};
+const QC={'✅':'qc','⚠️':'qo','📊':'qe','❌':'qg','🔗':'qp'};
+function renderTbl(){
+  let rows=TDATA.filter(r=>(tblL==='all'||r.l===tblL)&&(!tblS||(r.co+r.m+r.v).toLowerCase().includes(tblS.toLowerCase())));
+  if(sCol>=0){ const ks=['l','co','m','v','p','q']; rows.sort((a,b)=>a[ks[sCol]]<b[ks[sCol]]?-sDir:sDir); }
+  const tb=document.getElementById('dtb');
+  if(!rows.length){ tb.innerHTML=''; document.getElementById('nr').style.display='block'; return; }
+  document.getElementById('nr').style.display='none';
+  tb.innerHTML=rows.map(r=>`<tr><td><span class="tag ${LC[r.l]||''}">${LN[r.l]||r.l}</span></td><td style="font-weight:500;color:var(--text)">${r.co}</td><td>${r.m}</td><td style="font-family:var(--mono);font-size:12px;color:var(--text)">${r.v}</td><td style="color:var(--text3);white-space:nowrap">${r.p}</td><td><span class="qs ${QC[r.q]||''}">${r.q}</span></td><td style="color:var(--text3);font-size:12px">${r.src}</td></tr>`).join('');
+}
+function filterTbl(v){ tblS=v; renderTbl(); }
+function filterTblL(l,btn){ document.querySelectorAll('#dlp .pill').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); tblL=l; renderTbl(); }
+function srt(c){ const ths=document.querySelectorAll('#sec-data th'); if(sCol===c)sDir*=-1; else{sCol=c;sDir=1;} ths.forEach((th,i)=>{th.style.color=i===c?'var(--text)':'';});  renderTbl(); }
+renderTbl();
+
+// ─────────────────────────────────────────────
+// GAPS
+// ─────────────────────────────────────────────
+const GAPS=[
+  // v0.2 已關閉
+  {s:'✅',n:'AMD 2025全年資料中心數據',r:'已補入 10-K/A（2026-02-04）：收入 $16.6B，分部營業利潤 $3.6B，全公司毛利率 50%',tag:'closed'},
+  {s:'✅',n:'Vertiv 2025全年SEC確認數字',r:'已補入 10-K（2026-02-13）：淨銷售額 $10.2B，調整後營業利益率 20.4%，backlog $15B',tag:'closed'},
+  {s:'✅',n:'Hyperscaler Q1 2026各公司精確CapEx',r:'已補入各公司10-Q：Amazon $44.2B、Microsoft $30.9B、Alphabet $35.7B、Meta $19.8B，Hyperscaler公司合計 $130.6B',tag:'closed'},
+  // v0.3 已關閉
+  {s:'✅',n:'Microsoft Q1 2025 CapEx（v0.3）',r:'SEC 10-Q確認：$16.745B（FY2025 Q3，現金流量表 Investing Activities）。v0.2估算值~$16.8B誤差$0.055B，已更正。YoY精確：+84.5%',tag:'v03closed'},
+  {s:'✅',n:'Amazon Q1 2025 CapEx（v0.3）',r:'SEC 10-Q確認兩口徑：MD&A口徑$24.3B（採用，與v0.2一致）；現金流量表$25.019B。v0.2「估算」標記已更正為✅確認。YoY精確：+81.9%（MD&A口徑）',tag:'v03closed'},
+  // v0.3 已釐清
+  {s:'⚠️',n:'Anthropic ARR vs 實際收入（v0.3已釐清）',r:'三口徑為不同定義，非矛盾：① $4.5B = 2025單一年份GAAP收入；② >$5B = 2023年商業化起累計歷史收入（CFO法庭宣誓）；③ $19B ARR = 2026-03月末跑率×12年化快照，非已實現收入。Q1 2026實際$4.8B與ARR$19B合理接近。Anthropic以gross basis報ARR，OpenAI以net basis，不可直接比較。',tag:'v03clarified'},
+  {s:'⚠️',n:'OpenAI S-1提交日期（v0.3更正）',r:'官方確認提交日期：2026-06-08（OpenAI公司部落格）。原記載2026-05-22為媒體傳聞及銀行準備時間點，非官方確認。來源層級從📊升級為⚠️官方聲明。',tag:'v03clarified'},
+  // 結構性缺口（持續）
+  {s:'❌',n:'AMD資料中心分部毛利率',r:'雙重不可比：① AMD 10-K僅披露分部operating margin（~21.7%），不披露gross margin；② 業務組成不同：AMD含EPYC CPU+Instinct GPU+networking+rack-scale系統，NVIDIA以高毛利AI GPU為主。AMD整體毛利率50%較FY2024僅升1ppt，低毛利業務持續拖累。結構性缺口，無披露計畫。',tag:'open',perm:'structural'},
+  {s:'❌',n:'OpenAI正式SEC財務數據',r:'S-1機密提交官方宣布：2026-06-08（公司部落格）。SEC審查後公開，通常需數週至數月。建議查證SEC EDGAR（OpenAI CIK待公告）確認最新狀態。',tag:'open',perm:'pending',trigger:'S-1公開審查完成'},
+  {s:'❌',n:'Anthropic正式SEC財務數據',r:'S-1機密提交官方確認：2026-06-01（公司官方公告）。目標2026年10月上市，實際取決於SEC審查進度。建議查證SEC EDGAR確認最新狀態。',tag:'open',perm:'pending',trigger:'S-1公開審查完成，目標2026-10上市'},
+  {s:'🔗',n:'美國DC電力消耗（EIA Form 861）',r:'確認序列 22Q1–24Q3：168→272 TWh。最後確認點 272 TWh（2024 Q3）。2025後不可得（EIA發布延遲12–18個月）。全美DC總量，非AI專用，無法拆分。來源：Regime Shift Radar v5（自主構建）。',tag:'open',perm:'pending',trigger:'EIA Form 861年度發布（預計2026 Q3/Q4）'},
+  {s:'❌',n:'電力公司AI專用支出',r:'私人合約，不在SEC財報中獨立披露。結構性缺口，無可靠代理指標，無期限。EIA代理指標已部分補入（見上條）。',tag:'open',perm:'structural'},
+  {s:'❌',n:'Utility CapEx 跟進信號（NEE/Duke/Southern/Dominion）',r:'Regime Shift Radar v5標記為Placeholder。口徑未定義（基準年/計算方式/總CapEx vs AI子項）。待fetch-sec-utility.py輸出並定義口徑後補入。',tag:'open',perm:'pending',trigger:'口徑定義完成+SEC數據抓取'},
+  {s:'❌',n:'應用層總收入',r:'高度分散，無彙整來源。預計2026–2027年頭部SaaS公司開始獨立披露AI收入。',tag:'open',perm:'pending',trigger:'頭部SaaS公司開始獨立披露AI收入（預計2026–2027）'},
+  {s:'🔗',n:'TSMC AI晶片收入精確比例',r:'官方只披露HPC平台佔比（58%），AI加速器子項無法獨立拆出。管理層口頭陳述「high-teens」為代理指標。',tag:'open',perm:'structural'},
+  {s:'⬜',n:'Oracle OCI Q2/Q3 FY2026單季收入',r:'Oracle未在earnings中逐季細拆OCI收入。Q1$3.3B、Q4$5.8B、全年$18.1B均為官方披露；Q2+Q3合計~$9.0B由全年減Q1/Q4推算（🔗）。為次要缺口，全年數字一致無矛盾。',tag:'open',perm:'structural'},
+  {s:'❌',n:'Oracle季度CapEx拆分',r:'FY2026僅有全年數字$55.663B，季度拆分未公開披露。財年截至5月，與其他Hyperscaler公司口徑不對齊，獨立追蹤。',tag:'open',perm:'structural'},
+  {s:'❌',n:'Neocloud（CoreWeave等）財務數據',r:'CoreWeave已IPO（2025年）但季度序列尚不完整。Lambda Labs、Crusoe等未上市。納入條件：累計四季SEC確認財報，或市占超過5%，或重大事件。目前合計市占約1–2%。',tag:'open',perm:'pending',trigger:'CoreWeave累計四季SEC財報，或Neocloud合計市占>5%'},
+  {s:'⚠️',n:'NVIDIA Layer 2延伸收入（DGX Cloud / NIM）',r:'NVIDIA DGX Cloud算力租用與NIM推論微服務收入包含在資料中心分部內，未單獨披露。NVIDIA正在向Layer 2延伸，與Hyperscaler競爭，但無法量化。待NVIDIA單獨披露後升級為量化追蹤。',tag:'open',perm:'structural'},
+  {s:'⚠️',n:'物理AI算力需求（自動駕駛/機器人/藥物發現）',r:'物理AI應用算力需求結構（邊緣推論為主）與軟體AI不同，目前無法從雲端分部收入中拆分。規模化後DEMAND-b代理指標將系統性低估真實需求。待物理AI領域出現年收入>$5B上市公司後評估。',tag:'open',perm:'pending',trigger:'物理AI領域出現年收入>$5B上市公司'},
+  {s:'❌',n:'Layer 1→2 算力租用獨立毛利率',r:'AWS/Azure/GCP分部營益率均為整體雲端業務口徑，無法拆出純算力租用服務的毛利率。v0.8交叉驗證確認：產業報導同樣無法提供精確拆分（非搜尋深度問題）。質性圖像：NVIDIA 73–75%✅最高且最確定 > Hyperscaler租用50–60%📊估（部分報導指出inference壓力下探33–40%）> AI lab端OpenAI compute margin~70%/Anthropic 60%+📊（均為扣除算力成本後）。結構性缺口，預期長期維持。',tag:'open',perm:'structural'},
+  {s:'❌',n:'Layer 3→2 API採購成本佔比',r:'SaaS公司（Salesforce/ServiceNow）不單獨披露向OpenAI/Anthropic/Hyperscaler的API採購支出。v0.8交叉驗證：產業概況顯示AI原生SaaS的API成本佔COGS約30–60%（極端案例近100%），但無法對應本框架具名公司，僅作質性參考。一般企業AI支出佔IT支出比例6–15%（2026年快速成長中）。本框架資金流比例缺口維持。',tag:'open',perm:'structural'},
+  {s:'❌',n:'Anthropic毛利率',r:'無任何公開數字，S-1機密提交（2026-06-01）但正式財務數據未公開。v0.8交叉驗證：確認為產業普遍現象——同業模型公司中僅Cohere主動披露（70%，企業優先策略，規模較小$7B估值），OpenAI僅有Sacra第三方估算（~33%），Mistral明確聲明策略性不揭露，xAI同樣未披露。Anthropic缺口非個案特例，待S-1公開後補入。',tag:'open',perm:'pending',trigger:'S-1公開審查完成'},
+  {s:'⚠️',n:'v0.1 Hyperscaler公司 CapEx $75.9B 口徑矛盾',r:'v0.2確認數字$130.6B，差距約72%。可能原因：v0.1採用不含融資租賃口徑，或引用舊版數字。來源待追溯。',tag:'open',perm:'structural'},
+  {s:'✅',n:'Alphabet Q4 2024 CapEx 精確值（v0.6已關閉）',r:'官方披露 $14.276B（Q4 2024 Earnings Release + SEC filing，CIK 1652044）。原估 $14.0B，差距 $0.276B。Q4 2024 Hyperscaler公司合計更正為 $73.655B（全部✅）。Q4 2025 YoY 更正為 +72.4%（原估 +73%），比值維持 0.47，方向判斷不受影響。',tag:'v03closed'},
+];
+let gF='all';
+function renderG(){
+  const TL={closed:'v0.2 已關閉',v03closed:'v0.3 已關閉',v03clarified:'v0.3 已釐清',open:'待補'};
+  const TC={closed:'vtc',v03closed:'vtn',v03clarified:'vtn',open:'vt'};
+  const PERM_LABEL={structural:'🔒 結構性（可能永久）',pending:'⏳ 階段性（等待事件）'};
+  const PERM_CLASS={structural:'perm-structural',pending:'perm-pending'};
+  // filter mapping: 'closed' 顯示三種已關閉標籤；'structural'/'pending' 篩選永久性分類（僅對 open 缺口有意義）
+  const rows=GAPS.filter(g=>{
+    if(gF==='all') return true;
+    if(gF==='closed') return g.tag==='closed'||g.tag==='v03closed'||g.tag==='v03clarified';
+    if(gF==='structural') return g.perm==='structural';
+    if(gF==='pending') return g.perm==='pending';
+    return g.tag===gF;
+  });
+  document.getElementById('gg').innerHTML=rows.map(g=>{
+    const permBadge = g.perm ? `<span class="${PERM_CLASS[g.perm]||''}">${PERM_LABEL[g.perm]||g.perm}</span>` : '';
+    const triggerNote = g.trigger ? `<div class="gi-trigger">觸發條件：${g.trigger}</div>` : '';
+    return `<div class="gi"><div class="gi-s">${g.s}</div><div><div class="gi-n">${g.n}</div><div class="gi-r">${g.r}</div>${triggerNote}</div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="${TC[g.tag]||'vt'}">${TL[g.tag]||g.tag}</span>${permBadge}</div></div>`;
+  }).join('');
+}
+function filterG(f,btn){ document.querySelectorAll('#sec-gaps .pill').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); gF=f; renderG(); }
+renderG();
+
+// ─────────────────────────────────────────────
+// NAV
+// ─────────────────────────────────────────────
+function showSec(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+// init
+renderSankey();
+</script>
+</body>
+</html>
